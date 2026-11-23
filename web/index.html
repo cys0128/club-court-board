@@ -108,6 +108,18 @@ footer{font-size:12px;color:var(--sub);line-height:1.6}
 .tab[aria-selected=true]{background:var(--ball);border-color:var(--ball);color:#1B1F1C}
 .tab:focus-visible,.nx a:focus-visible{outline:3px solid #fff;outline-offset:2px}
 #yWrap{display:none}
+.wx{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:600;color:var(--sub2);font-variant-numeric:tabular-nums}
+.wx svg{flex-shrink:0}
+.wm{position:absolute;top:2px;right:2px;display:flex;gap:1px;pointer-events:none}
+.wxn{display:inline-flex;align-items:center;gap:3px;font-size:12px;font-weight:600;color:#1F5FA8;margin-left:8px}
+.sx{display:flex;gap:6px;overflow-x:auto;padding:2px 0 6px;margin:0;list-style:none}
+.sx:empty{display:none}
+.sx li{flex:0 0 auto;min-width:64px;background:var(--card);border-radius:12px;padding:6px 8px;display:flex;flex-direction:column;align-items:center;gap:2px;font-size:11px;color:var(--sub2);font-variant-numeric:tabular-nums}
+.sx li b{font-size:11px;color:var(--ink)}
+.wxcredit{max-width:1200px;margin:0 auto;padding:0 20px 28px;font-size:12px;color:var(--sub)}
+.wxcredit a{color:var(--sub2)}
+@media (min-width:900px){.wxcredit{padding:0 40px 32px}}
+.cell{position:relative}
 .live{min-height:44px;display:inline-flex;align-items:center;gap:6px;padding:0 14px;border-radius:999px;border:1.5px solid var(--court);background:#fff;color:var(--court);font-size:13px;font-weight:700;cursor:pointer}
 .live:hover{background:var(--court);color:#fff}
 .live:disabled{opacity:.55;cursor:default}
@@ -183,6 +195,7 @@ a.cell:focus-visible{outline:3px solid #2F7FD8;outline-offset:1px}
   </aside>
 
   <main>
+    <ul class="sx" id="sWx" aria-label="서울 7일 날씨"></ul>
     <div id="list"></div>
     <footer><span class="u">출처: 서울 열린데이터광장 ‘서울시 체육시설 공공서비스예약 정보’.</span> <span class="u">서울시 공공서비스예약 목록 기준입니다.</span></footer>
   </main>
@@ -195,6 +208,8 @@ a.cell:focus-visible{outline:3px solid #2F7FD8;outline-offset:1px}
   <a class="go" id="yGo" href="https://publicsports.yongin.go.kr/publicsports/sports/selectFcltyRceptResveListU.do" target="_blank" rel="noopener">공식 예약 사이트에서 예약하기 <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M5 3l5 5-5 5" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
   <p class="note"><span class="u">출처: 용인특례시 공공체육시설 통합예약(비로그인 공개 화면 기준).</span></p></div>
 </main></div>
+
+<footer class="wxcredit"><a href="https://open-meteo.com/" target="_blank" rel="noopener">Weather data by Open-Meteo.com</a> · CC BY 4.0</footer>
 
 <script>
 (function(){
@@ -259,6 +274,48 @@ a.cell:focus-visible{outline:3px solid #2F7FD8;outline-offset:1px}
     $('onlyOpen').onchange=function(){S.only=this.checked;render()};
     render();
   }).catch(function(e){if(!courts.length)$('list').innerHTML='<p class="empty">서울 데이터를 불러오지 못했습니다.</p>';throw e})}
+  /* ---------- 날씨 (Open-Meteo, 키 없음·브라우저 직접 호출·30분 캐시, 실패하면 조용히 숨김) ---------- */
+  var PLACES={yongin:{lat:37.3238,lon:127.1118},seoul:{lat:37.5665,lon:126.9780}};   // 아르피아(용인 수지구 죽전동 포은대로 499) 근방, 서울시청 근방
+  var WX={},WXTTL=30*60*1000;
+  var SK={sun:'#C79A00',cl:'#7A817C',rain:'#2F7FD8',snow:'#7BA7D9'};
+  function svg(inner,sz){sz=sz||18;return'<svg width="'+sz+'" height="'+sz+'" viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+inner+'</svg>'}
+  var CLOUD='<path stroke="'+SK.cl+'" d="M7 18a4 4 0 0 1-.5-7.97A5.5 5.5 0 0 1 17 9.5a4.2 4.2 0 0 1 .5 8.5z"/>';
+  function wxIcon(code,sz){var i;
+    if(code===0)i='<circle cx="12" cy="12" r="4" stroke="'+SK.sun+'"/><path stroke="'+SK.sun+'" d="M12 2v2M12 20v2M2 12h2M20 12h2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>';
+    else if(code<=2)i='<circle cx="9" cy="8" r="3" stroke="'+SK.sun+'"/><path stroke="'+SK.sun+'" d="M9 2v1.5M3 8h1.5M4.8 3.8l1 1M13.2 3.8l-1 1"/><path stroke="'+SK.cl+'" d="M8 20a3.5 3.5 0 0 1-.4-7A4.8 4.8 0 0 1 17 12.5a3.7 3.7 0 0 1 .4 7.5z"/>';
+    else if(code===3)i=CLOUD;
+    else if(code<=48)i='<path stroke="'+SK.cl+'" d="M4 9h16M6 13h12M8 17h8"/>';
+    else if(code<=67||(code>=80&&code<=82))i=CLOUD+'<path stroke="'+SK.rain+'" d="M9 20l1-2M13 20l1-2M17 20l1-2"/>';
+    else if(code<=77||code===85||code===86)i=CLOUD+'<path stroke="'+SK.snow+'" d="M9 20h.01M13 21h.01M17 20h.01"/>';
+    else i=CLOUD+'<path stroke="'+SK.sun+'" d="M12 16l-2 3h3l-2 3"/>';
+    return svg(i,sz)}
+  function umbIcon(sz){return svg('<path stroke="'+SK.rain+'" d="M3 12a9 9 0 0 1 18 0zM12 12v6a2 2 0 0 0 4 0"/>',sz||12)}
+  function windIcon(sz){return svg('<path stroke="'+SK.cl+'" d="M3 8h10a2.5 2.5 0 1 0-2.5-2.5M3 12h15a2.5 2.5 0 1 1-2.5 2.5M3 16h6"/>',sz||12)}
+  function wxLoad(name,force){
+    var key='wx2:'+name,P=PLACES[name];
+    try{if(!force){var c=JSON.parse(localStorage.getItem(key)||'null');if(c&&Date.now()-c.t<WXTTL){WX[name]=c.d;return Promise.resolve(c.d)}}}catch(e){}
+    var u='https://api.open-meteo.com/v1/forecast?latitude='+P.lat+'&longitude='+P.lon+'&hourly=temperature_2m,precipitation_probability,weather_code,wind_speed_10m&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max,wind_speed_10m_max&timezone=Asia%2FSeoul&forecast_days=16&wind_speed_unit=ms';
+    return fetch(u).then(function(r){if(!r.ok)throw new Error(r.status);return r.json()}).then(function(d){
+      if(!d||!d.daily||!d.hourly)throw new Error('bad');
+      var h={};d.hourly.time.forEach(function(tm,i){h[tm]=[d.hourly.precipitation_probability[i],d.hourly.wind_speed_10m[i]]});
+      var o={days:d.daily.time,code:d.daily.weather_code,max:d.daily.temperature_2m_max,min:d.daily.temperature_2m_min,pp:d.daily.precipitation_probability_max,hr:h};
+      WX[name]=o;try{localStorage.setItem(key,JSON.stringify({t:Date.now(),d:o}))}catch(e){}return o
+    }).catch(function(){return WX[name]||null})
+  }
+  function wxDayHtml(name,day){var w=WX[name];if(!w)return'';var i=w.days.indexOf(day);if(i<0||w.max[i]==null)return'';
+    return'<span class="wx" title="날씨 예보">'+wxIcon(w.code[i])+Math.round(w.max[i])+'°/'+Math.round(w.min[i])+'° · 강수 '+(w.pp[i]==null?'-':w.pp[i]+'%')+'</span>'}
+  function wxSlot(day,s,e){var w=WX.yongin;if(!w)return null;var a=+s.slice(0,2),b=+e.slice(0,2),p=-1,m=-1;
+    for(var h=a;h<b;h++){var v=w.hr[day+'T'+(h<10?'0':'')+h+':00'];if(!v)continue;if(v[0]!=null&&v[0]>p)p=v[0];if(v[1]!=null&&v[1]>m)m=v[1]}
+    if(p<0&&m<0)return null;return{rain:p>=40?p:0,wind:m>=8?m:0}}
+  function wxMini(day,s,e){var x=wxSlot(day,s,e);return x&&(x.rain||x.wind)?'<i class="wm">'+(x.rain?umbIcon(11):'')+(x.wind?windIcon(11):'')+'</i>':''}
+  function wxAria(day,s,e){var x=wxSlot(day,s,e),r=[];if(x&&x.rain)r.push('강수확률 '+x.rain+'%');if(x&&x.wind)r.push('바람 '+Math.round(x.wind)+'m/s');return r.length?', '+r.join(', '):''}
+  function wxNote(day,s,e){var x=wxSlot(day,s,e);return x&&(x.rain||x.wind)?'<span class="wxn">'+(x.rain?umbIcon(13)+' '+x.rain+'%':'')+(x.wind?(x.rain?' ':'')+windIcon(13)+' '+Math.round(x.wind)+'m/s':'')+'</span>':''}
+  function seoulWx(){var w=WX.seoul,el=$('sWx');if(!w){el.innerHTML='';return}
+    var n=new Date(),k=n.getFullYear()+'-'+p2(n.getMonth()+1)+'-'+p2(n.getDate()),s=w.days.indexOf(k);if(s<0)s=0;
+    el.innerHTML=w.days.slice(s,s+7).map(function(d,i){var j=s+i,dt=d.split('-');
+      return'<li><b>'+dt[1]+'.'+dt[2]+'('+['일','월','화','수','목','금','토'][new Date(+dt[0],dt[1]-1,+dt[2]).getDay()]+')</b>'+wxIcon(w.code[j],20)+'<span>'+Math.round(w.max[j])+'°/'+Math.round(w.min[j])+'°</span><span>'+(w.pp[j]==null?'-':w.pp[j]+'%')+'</span></li>'}).join('')}
+  function wxAll(force){return Promise.all([wxLoad('yongin',force),wxLoad('seoul',force)]).then(function(){seoulWx();if(yd)yrender()})}
+
   /* ---------- 용인 탭 ---------- */
   var YDATA=new URLSearchParams(location.search).get('ydata')||PAGES+'data/yongin.json';
   var seoulUpd='',yongUpd='',yd=null,tab='seoul';
@@ -307,16 +364,16 @@ a.cell:focus-visible{outline:3px solid #2F7FD8;outline-offset:1px}
         if(s.open&&!past){dOpen++;nOpen++;(byT[s.s]=byT[s.s]||{e:s.e,c:[],k:[]}).c.push(c.name),byT[s.s].k.push(c.key)}})});
       Object.keys(byT).sort().forEach(function(k){nxt.push({day:day,s:k,e:byT[k].e,c:byT[k].c,k:byT[k].k})});
       var ts=Object.keys(times).sort();
-      dh+='<details class="dday" data-day="'+day+'"'+((wasOpen[day]!==undefined?wasOpen[day]:dOpen)?' open':'')+'><summary><span class="dh">'+dlabel(day)+(weekend.indexOf(day)>=0?' <i class="wk">주말·공휴일</i>':'')+'</span><span class="sm"><em class="ag">'+(live[day]?'<i class="lv">공식 사이트 조회 '+live[day].at+'</i>':esc(ago(chk[day])))+'</em> '+(dOpen?'<b class="go-n">빈 시간대 '+dOpen+'</b>':'전부 마감')+'</span>'+liveBtn(day)+'</summary>'
+      dh+='<details class="dday" data-day="'+day+'"'+((wasOpen[day]!==undefined?wasOpen[day]:dOpen)?' open':'')+'><summary><span class="dh">'+dlabel(day)+(weekend.indexOf(day)>=0?' <i class="wk">주말·공휴일</i>':'')+'</span> '+wxDayHtml('yongin',day)+'<span class="sm"><em class="ag">'+(live[day]?'<i class="lv">공식 사이트 조회 '+live[day].at+'</i>':esc(ago(chk[day])))+'</em> '+(dOpen?'<b class="go-n">빈 시간대 '+dOpen+'</b>':'전부 마감')+'</span>'+liveBtn(day)+'</summary>'
         +'<div class="tablebox" style="margin-top:8px"><table class="ytab"><thead><tr><th scope="col">코트</th>'
         +ts.map(function(k){return'<th scope="col">'+k+'</th>'}).join('')+'</tr></thead><tbody>'
         +courts.map(function(c){var m={};(cs[c.key]||[]).forEach(function(s){m[s.s]=s});
           return'<tr><th scope="row" style="font-weight:600;color:#3F4541;text-align:left">'+esc(c.name)+'</th>'+ts.map(function(k){var s=m[k];
-            return'<td>'+(s?'<a class="cell '+(s.open?'o':'c')+'" href="'+esc(curl(day,c.key))+'" target="_blank" rel="noopener" aria-label="'+esc(c.name+' '+k+' '+(s.open?'빈자리':'마감')+', 공식 사이트에서 지금 확인')+'" title="공식 사이트에서 지금 확인">'+(s.open?'빈자리':'마감')+'</a>':'<span class="cell" style="color:#9AA09B">–</span>')+'</td>'}).join('')+'</tr>'}).join('')
+            return'<td>'+(s?'<a class="cell '+(s.open?'o':'c')+'" href="'+esc(curl(day,c.key))+'" target="_blank" rel="noopener" aria-label="'+esc(c.name+' '+k+' '+(s.open?'빈자리':'마감')+wxAria(day,s.s,s.e)+', 공식 사이트에서 지금 확인')+'" title="공식 사이트에서 지금 확인">'+(s.open?'빈자리':'마감')+wxMini(day,s.s,s.e)+'</a>':'<span class="cell" style="color:#9AA09B">–</span>')+'</td>'}).join('')+'</tr>'}).join('')
         +'</tbody></table></div></details>'});
     $('yDays').innerHTML=dh||'<p class="empty">표시할 날짜가 없습니다.</p>';
     nxt.sort(function(a,b){return a.day<b.day?-1:a.day>b.day?1:a.s<b.s?-1:1});
-    $('yNext').innerHTML=nxt.length?'<ul class="nxlist">'+nxt.slice(0,10).map(function(n){return'<li class="nx"><b>'+dlabel(n.day)+' '+n.s+'–'+n.e+'</b><div class="nxc"><span class="nxcap">공식 사이트에서 지금 확인</span>'+n.c.map(function(nm,i){return'<a class="ol" href="'+esc(curl(n.day,n.k[i]))+'" target="_blank" rel="noopener" aria-label="'+esc(nm+' 공식 사이트에서 지금 확인')+'">'+esc(nm)+' ↗</a>'}).join('')+liveBtn(n.day)+'</div></li>'}).join('')+'</ul>'+(nxt.length>10?'<p class="note" style="margin-top:8px">가까운 10개만 보여 줍니다. 전체 '+nxt.length+'개는 아래 시간표에서 확인하세요.</p>':'')
+    $('yNext').innerHTML=nxt.length?'<ul class="nxlist">'+nxt.slice(0,10).map(function(n){return'<li class="nx"><b>'+dlabel(n.day)+' '+n.s+'–'+n.e+'</b>'+wxNote(n.day,n.s,n.e)+'<div class="nxc"><span class="nxcap">공식 사이트에서 지금 확인</span>'+n.c.map(function(nm,i){return'<a class="ol" href="'+esc(curl(n.day,n.k[i]))+'" target="_blank" rel="noopener" aria-label="'+esc(nm+' 공식 사이트에서 지금 확인')+'">'+esc(nm)+' ↗</a>'}).join('')+liveBtn(n.day)+'</div></li>'}).join('')+'</ul>'+(nxt.length>10?'<p class="note" style="margin-top:8px">가까운 10개만 보여 줍니다. 전체 '+nxt.length+'개는 아래 시간표에서 확인하세요.</p>':'')
       :'<div class="dash">지금 확인된 '+(yKind==='wd'?'평일':yKind==='we'?'주말·공휴일':'')+' 빈자리가 없습니다. 취소분이 나오면 15분 안팎으로 여기 맨 위에 뜹니다.</div>';
     if(tab==='yongin'){$('nOpen').textContent=nOpen;$('nSoon').textContent=days.length;$('nClosed').textContent=courts.length;$('updated').textContent=yongUpd}
   }
@@ -337,6 +394,7 @@ a.cell:focus-visible{outline:3px solid #2F7FD8;outline-offset:1px}
   function refreshAll(manual){
     if(busy)return;if(manual&&Date.now()-lastClick<3000)return;if(manual)lastClick=Date.now();
     busy=true;var b=$('refresh');b.disabled=true;b.classList.add('spin');
+    wxAll(!!manual);
     Promise.all([loadSeoul().then(function(){return 1},function(){return 0}),loadYongin().then(function(){return 1},function(){return 0})]).then(function(r){
       var d=new Date();$('rfNote').textContent=(r[0]&&r[1]?'방금 확인: ':'일부만 읽음: ')+p2(d.getHours())+':'+p2(d.getMinutes())+' 데이터';
       busy=false;b.disabled=false;b.classList.remove('spin')});
