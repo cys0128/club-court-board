@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>서울 테니스장 접수 현황</title>
+<style>
+:root{--bg:#f6f7f9;--card:#fff;--ink:#1b1f24;--sub:#5f6b76;--line:#e3e7ec;--accent:#1f7a4d;--open:#1f7a4d;--soon:#b45309;--soonbg:#fef3c7;--closed:#7b8794;--openbg:#dcf3e6;--closedbg:#eceff2}
+@media(prefers-color-scheme:dark){:root{--bg:#14171a;--card:#1d2125;--ink:#e8ebee;--sub:#9aa5b0;--line:#2c3238;--accent:#2f9e6a;--open:#6fd6a3;--soon:#f2b45a;--soonbg:#3a2d12;--closed:#8a96a2;--openbg:#16382a;--closedbg:#262b30}}
+*{box-sizing:border-box}
+html{touch-action:manipulation}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.7 system-ui,-apple-system,"Malgun Gothic","Apple SD Gothic Neo",sans-serif;touch-action:manipulation}
+body,h1,h2,h3,p,li,.meta,.name{word-break:keep-all;overflow-wrap:anywhere}
+.u{display:inline-block}
+main{max-width:960px;margin:0 auto;padding:20px 16px 48px}
+h1{font-size:22px;letter-spacing:-.03em;margin:0 0 4px}
+.top p{margin:0;color:var(--sub);font-size:13px}
+.bar{position:sticky;top:0;z-index:2;background:var(--bg);padding:12px 0;display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+select,.chk{font:inherit;font-size:14px;min-height:40px;border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:8px;padding:0 12px}
+.chk{display:inline-flex;align-items:center;gap:8px;cursor:pointer}
+.chk input{width:18px;height:18px;accent-color:var(--accent)}
+.count{margin-left:auto;color:var(--sub);font-size:13px}
+.notice{background:var(--soonbg);color:var(--soon);border-radius:8px;padding:8px 12px;font-size:13px;margin:8px 0}
+h2{font-size:15px;margin:22px 0 10px;letter-spacing:-.02em}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px 14px 12px;display:flex;flex-direction:column;gap:8px}
+.row1{display:flex;gap:8px;align-items:flex-start;justify-content:space-between}
+.name{font-weight:650;letter-spacing:-.02em;line-height:1.45}
+.badge{flex:none;font-size:12px;font-weight:650;padding:2px 9px;border-radius:99px;white-space:nowrap}
+.b-open{background:var(--openbg);color:var(--open)}.b-soon{background:var(--soonbg);color:var(--soon)}.b-closed{background:var(--closedbg);color:var(--closed)}
+.tags{display:flex;flex-wrap:wrap;gap:6px}
+.tag{font-size:12px;color:var(--sub);border:1px solid var(--line);border-radius:6px;padding:0 7px;white-space:nowrap}
+dl{margin:0;display:grid;grid-template-columns:auto 1fr;gap:2px 10px;font-size:13px}
+dt{color:var(--sub);white-space:nowrap}dd{margin:0;font-variant-numeric:tabular-nums}
+.go{margin-top:auto;display:flex;align-items:center;justify-content:center;min-height:40px;border-radius:8px;background:var(--accent);color:#fff;text-decoration:none;font-weight:650;font-size:14px}
+.card.closed{opacity:.65}.card.closed .go{background:var(--closed)}
+.empty{color:var(--sub);padding:32px 0;text-align:center}
+footer{margin-top:28px;color:var(--sub);font-size:12px}
+</style>
+</head>
+<body>
+<main>
+  <header class="top">
+    <h1>서울 테니스장 접수 현황</h1>
+    <p><span class="u">서울시 공공서비스예약 목록 기준입니다.</span> <span class="u">날짜·시간대별 빈자리는 예약 사이트에서 확인하세요.</span></p>
+    <p id="updated"></p>
+  </header>
+  <div class="bar">
+    <select id="gu" aria-label="구 선택"><option value="">전체 구</option></select>
+    <label class="chk"><input type="checkbox" id="onlyOpen"> 접수중만</label>
+    <span class="count" id="count"></span>
+  </div>
+  <div id="notice"></div>
+  <div id="list"></div>
+  <footer><span class="u">출처: 서울 열린데이터광장 ‘서울시 체육시설 공공서비스예약 정보’.</span> <span class="u">예약은 서울시 공공서비스예약 사이트에서만 가능합니다.</span></footer>
+</main>
+<script>
+(function(){
+  var $=function(id){return document.getElementById(id)};
+  var DATA=new URLSearchParams(location.search).get('data')||'data/courts.json';
+  var courts=[];
+  function parse(s){
+    if(!s) return null; var m=s.match(/(\d+)-(\d+)-(\d+)[ T](\d+):(\d+)/); if(!m) return null;
+    return new Date(+m[1],m[2]-1,+m[3],+m[4],+m[5]);
+  }
+  function p2(n){return ('0'+n).slice(-2)}
+  function fmt(d){ return d?d.getFullYear()+'.'+p2(d.getMonth()+1)+'.'+p2(d.getDate())+' '+p2(d.getHours())+':'+p2(d.getMinutes()):'-'; }
+  function fmtDay(d){ return d?d.getFullYear()+'.'+p2(d.getMonth()+1)+'.'+p2(d.getDate()):'-'; }
+  function state(c,now){
+    var b=parse(c.RCPTBGNDT),e=parse(c.RCPTENDDT);
+    if(b&&now<b) return 'soon';
+    if(e&&now>e) return 'closed';
+    if(/마감|종료|중지/.test(c.SVCSTATNM)) return 'closed';
+    return 'open';
+  }
+  var LABEL={soon:'오픈 예정',open:'접수중',closed:'마감'};
+  function daytype(n){ return /평일/.test(n)?'평일':(/주말|휴일/.test(n)?'주말·공휴일':''); }
+  function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
+  function safeUrl(u){return /^https:\/\/yeyak\.seoul\.go\.kr\//.test(u)?u:''}
+  function card(c){
+    var st=c._st,dt=daytype(c.SVCNM),url=safeUrl(c.SVCURL);
+    var tags=[c.AREANM,dt,c.METHOD,c.PAYATNM].filter(Boolean).map(function(t){return '<span class="tag">'+esc(t)+'</span>'}).join('');
+    return '<article class="card '+(st==='closed'?'closed':'')+'"><div class="row1"><div class="name">'+esc(c.SVCNM)+'</div><span class="badge b-'+st+'">'+LABEL[st]+'</span></div>'
+      +'<div class="tags">'+tags+'</div><dl>'
+      +'<dt>장소</dt><dd>'+esc(c.PLACENM||'-')+'</dd>'
+      +'<dt>접수</dt><dd>'+fmt(c._b)+' ~<br>'+fmt(c._e)+'</dd>'
+      +'<dt>이용</dt><dd>'+fmtDay(parse(c.SVCOPNBGNDT))+' ~ '+fmtDay(parse(c.SVCOPNENDDT))+(c.V_MIN?'<br>'+esc(c.V_MIN)+' ~ '+esc(c.V_MAX):'')+'</dd>'
+      +'</dl>'+(url?'<a class="go" href="'+esc(url)+'" target="_blank" rel="noopener">예약 사이트에서 보기</a>':'')+'</article>';
+  }
+  function render(){
+    var gu=$('gu').value,only=$('onlyOpen').checked;
+    var list=courts.filter(function(c){return (!gu||c.AREANM===gu)&&(!only||c._st==='open')});
+    var order={soon:0,open:1,closed:2};
+    list.sort(function(a,b){
+      if(a._st!==b._st) return order[a._st]-order[b._st];
+      if(a._st==='soon') return (a._b-b._b)||0;
+      return (a.AREANM||'').localeCompare(b.AREANM||'','ko')||(a.SVCNM||'').localeCompare(b.SVCNM||'','ko');
+    });
+    $('count').textContent=list.length+'건';
+    if(!list.length){$('list').innerHTML='<p class="empty">조건에 맞는 코트가 없습니다.</p>';return}
+    var html='',cur=null,grid='',titles={soon:'오픈 예정 (접수 시작 시각 순)',open:'접수중',closed:'마감'};
+    list.forEach(function(c){
+      if(c._st!==cur){ if(cur!==null) html+='<div class="grid">'+grid+'</div>'; grid=''; cur=c._st; html+='<h2>'+titles[cur]+'</h2>'; }
+      grid+=card(c);
+    });
+    $('list').innerHTML=html+'<div class="grid">'+grid+'</div>';
+  }
+  fetch(DATA,{cache:'no-store'}).then(function(r){if(!r.ok)throw new Error(r.status);return r.json()}).then(function(d){
+    var now=new Date();
+    courts=d.courts.map(function(c){c._b=parse(c.RCPTBGNDT);c._e=parse(c.RCPTENDDT);c._st=state(c,now);return c});
+    $('updated').textContent='마지막 갱신 '+fmt(parse(d.updated_at))+' · 코트 서비스 '+d.count+'건';
+    if(d.sample_key) $('notice').innerHTML='<div class="notice">샘플 인증키 데이터입니다(5건 제한). 실제 키를 넣고 수집 스크립트를 다시 실행하세요.</div>';
+    var gus=Array.from(new Set(courts.map(function(c){return c.AREANM}).filter(Boolean))).sort(function(a,b){return a.localeCompare(b,'ko')});
+    $('gu').innerHTML='<option value="">전체 구</option>'+gus.map(function(g){return '<option>'+esc(g)+'</option>'}).join('');
+    $('gu').onchange=render;$('onlyOpen').onchange=render;render();
+  }).catch(function(){$('list').innerHTML='<p class="empty">data/courts.json 을 불러오지 못했습니다. 로컬 서버(python -m http.server)로 여세요.</p>'});
+})();
+</script>
+</body>
+</html>
