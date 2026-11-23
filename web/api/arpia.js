@@ -15,8 +15,8 @@ const SEED = {
   "2026-12": { c1: 15150, c2: 15151, c3: 15152, cd: 15153 },
 };
 const GAP_MS = 1000;            // 건 사이 1초
-const LIMIT_PER_MIN = 12;       // 인스턴스 기준 분당 공식 요청 상한
-const MEM_TTL = 60 * 1000;      // 같은 날짜 메모리 캐시
+const LIMIT_PER_MIN = 20;       // 인스턴스 기준 분당 공식 요청 상한(첫 접속의 4날짜×4면=16건이 들어가도록 12→20)
+const MEM_TTL = 600 * 1000;     // 같은 날짜 메모리 캐시 10분
 const COOLDOWN = 60 * 1000;     // 실패 뒤 공식 호출 쉼
 const TM_RE = /(\d{1,2}:\d{2})\s*~\s*(\d{1,2}:\d{2})/;
 
@@ -146,14 +146,14 @@ module.exports = async (req, res) => {
   if (!p) return send(400, { error: "date 는 오늘부터 다음 달 말일 사이의 YYYYMMDD 만 허용됩니다" });
   const ym = `${p.y}-${String(p.mo).padStart(2, "0")}`;
   const hit = memCache.get(date);
-  if (hit && Date.now() - hit.t < MEM_TTL) return send(200, { ...hit.body, cached: true }, "public, s-maxage=60, stale-while-revalidate=60");
+  if (hit && Date.now() - hit.t < MEM_TTL) return send(200, { ...hit.body, cached: true }, "public, s-maxage=600, stale-while-revalidate=600");
   try {
     let pr = inflight.get(date);
     if (!pr) { pr = fetchDay(date, ym).finally(() => inflight.delete(date)); inflight.set(date, pr); }
     const body = await pr;
     memCache.set(date, { t: Date.now(), body });
     if (memCache.size > 40) memCache.delete(memCache.keys().next().value);
-    return send(200, body, "public, s-maxage=60, stale-while-revalidate=60");
+    return send(200, body, "public, s-maxage=600, stale-while-revalidate=600");
   } catch (e) {
     const st = e instanceof Fail ? e.status : 502;
     return send(st, { error: e instanceof Fail ? e.message : "조회 실패" });
