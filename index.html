@@ -3,117 +3,200 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>서울 테니스장 접수 현황</title>
+<title>우리 모임 코트판</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
-:root{--bg:#f6f7f9;--card:#fff;--ink:#1b1f24;--sub:#5f6b76;--line:#e3e7ec;--accent:#1f7a4d;--open:#1f7a4d;--soon:#b45309;--soonbg:#fef3c7;--closed:#7b8794;--openbg:#dcf3e6;--closedbg:#eceff2}
-@media(prefers-color-scheme:dark){:root{--bg:#14171a;--card:#1d2125;--ink:#e8ebee;--sub:#9aa5b0;--line:#2c3238;--accent:#2f9e6a;--open:#6fd6a3;--soon:#f2b45a;--soonbg:#3a2d12;--closed:#8a96a2;--openbg:#16382a;--closedbg:#262b30}}
+:root{--court:#17533D;--court-d:#0E3829;--ball:#D9EA4F;--bg:#F4F2EC;--ink:#1B1F1C;--sub:#5B625D;--sub2:#4A524D;--line:#D5D1C6;--card:#fff;--closedbg:#ECE9E1;--onhead:#CFE3D8}
 *{box-sizing:border-box}
-html{touch-action:manipulation}
-body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.7 system-ui,-apple-system,"Malgun Gothic","Apple SD Gothic Neo",sans-serif;touch-action:manipulation}
-body,h1,h2,h3,p,li,.meta,.name{word-break:keep-all;overflow-wrap:anywhere}
+html{touch-action:manipulation;-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:'IBM Plex Sans KR',system-ui,-apple-system,'Malgun Gothic','Apple SD Gothic Neo',sans-serif;font-size:15px;line-height:1.6;word-break:keep-all;overflow-wrap:anywhere;touch-action:manipulation}
+button,input,summary,a{touch-action:manipulation;font:inherit}
+h1,h2,h3,p{margin:0}
 .u{display:inline-block}
-main{max-width:960px;margin:0 auto;padding:20px 16px 48px}
-h1{font-size:22px;letter-spacing:-.03em;margin:0 0 4px}
-.top p{margin:0;color:var(--sub);font-size:13px}
-.bar{position:sticky;top:0;z-index:2;background:var(--bg);padding:12px 0;display:flex;flex-wrap:wrap;gap:10px;align-items:center}
-select,.chk{font:inherit;font-size:14px;min-height:40px;border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:8px;padding:0 12px}
-.chk{display:inline-flex;align-items:center;gap:8px;cursor:pointer}
-.chk input{width:18px;height:18px;accent-color:var(--accent)}
-.count{margin-left:auto;color:var(--sub);font-size:13px}
-.notice{background:var(--soonbg);color:var(--soon);border-radius:8px;padding:8px 12px;font-size:13px;margin:8px 0}
-h2{font-size:15px;margin:22px 0 10px;letter-spacing:-.02em}
-.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px}
-.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px 14px 12px;display:flex;flex-direction:column;gap:8px}
-.row1{display:flex;gap:8px;align-items:flex-start;justify-content:space-between}
-.name{font-weight:650;letter-spacing:-.02em;line-height:1.45}
-.badge{flex:none;font-size:12px;font-weight:650;padding:2px 9px;border-radius:99px;white-space:nowrap}
-.b-open{background:var(--openbg);color:var(--open)}.b-soon{background:var(--soonbg);color:var(--soon)}.b-closed{background:var(--closedbg);color:var(--closed)}
-.tags{display:flex;flex-wrap:wrap;gap:6px}
-.tag{font-size:12px;color:var(--sub);border:1px solid var(--line);border-radius:6px;padding:0 7px;white-space:nowrap}
-dl{margin:0;display:grid;grid-template-columns:auto 1fr;gap:2px 10px;font-size:13px}
-dt{color:var(--sub);white-space:nowrap}dd{margin:0;font-variant-numeric:tabular-nums}
-.go{margin-top:auto;display:flex;align-items:center;justify-content:center;min-height:40px;border-radius:8px;background:var(--accent);color:#fff;text-decoration:none;font-weight:650;font-size:14px}
-.card.closed{opacity:.65}.card.closed .go{background:var(--closed)}
-.empty{color:var(--sub);padding:32px 0;text-align:center}
-footer{margin-top:28px;color:var(--sub);font-size:12px}
+.hero{background:var(--court);color:#fff}
+.hero-in{max-width:1200px;margin:0 auto;padding:28px 20px 24px;display:flex;flex-direction:column;gap:18px}
+.hero-l{display:flex;flex-direction:column;gap:18px}
+.head-top{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:10px;font-size:15px;font-weight:600;letter-spacing:.02em}
+.updated{font-size:12px;color:var(--onhead)}
+.hero h1{font-size:28px;line-height:1.3;font-weight:700}
+.stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.stat{background:rgba(255,255,255,.10);border-radius:14px;padding:12px;display:flex;flex-direction:column;gap:2px}
+.stat span{font-size:12px;color:var(--onhead)}
+.stat b{font-size:24px;font-weight:700;line-height:1.3}
+.wrap{max-width:1200px;margin:0 auto;padding:16px 20px 40px;display:flex;flex-direction:column;gap:20px}
+.panel{display:flex;flex-direction:column;gap:12px}
+.pbox{background:var(--card);border-radius:18px;padding:14px;display:flex;flex-direction:column;gap:12px}
+.flabel{font-size:13px;font-weight:600;color:var(--sub2)}
+.search{display:none;flex-direction:column;gap:6px}
+.search input{min-height:44px;border:1px solid var(--line);border-radius:12px;padding:0 14px;font-size:14px;color:var(--ink);background:#fff}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{min-height:44px;padding:0 18px;border-radius:999px;border:1px solid var(--line);background:#fff;color:var(--ink);font-size:14px;cursor:pointer}
+.chip[aria-pressed=true]{background:var(--ink);border-color:var(--ink);color:#fff;font-weight:600}
+.chk{min-height:44px;display:inline-flex;align-items:center;gap:10px;font-size:14px;cursor:pointer;border:1px solid var(--line);background:#fff;border-radius:999px;padding:0 14px;align-self:flex-start}
+.chk input{width:18px;height:18px;margin:0;accent-color:var(--court)}
+.chip:focus-visible,.chk:focus-within,.go:focus-visible,summary:focus-visible,.search input:focus-visible{outline:3px solid #2F7FD8;outline-offset:2px}
+.dayrow{display:none;flex-direction:column;gap:8px}
+.grow{display:flex;flex-direction:column;gap:8px}
+.note{font-size:12px;color:var(--sub);line-height:1.6}
+.notice{font-size:12px;color:var(--sub);background:#E9E6DC;border-radius:10px;padding:8px 12px}
+main{display:flex;flex-direction:column;gap:24px;min-width:0}
+#list{display:flex;flex-direction:column;gap:24px}
+section{display:flex;flex-direction:column;gap:12px}
+h2{font-size:15px;font-weight:700;color:var(--sub2)}
+.dash{border:1.5px dashed #CBC6B8;border-radius:18px;padding:18px;font-size:14px;color:var(--sub);line-height:1.6}
+.grid{display:grid;grid-template-columns:1fr;gap:12px}
+.card{background:var(--card);border-radius:18px;padding:18px;display:flex;flex-direction:column;gap:14px;box-shadow:0 1px 2px rgba(27,31,28,.06)}
+.card.soon{box-shadow:inset 0 0 0 1.5px var(--ball)}
+.r1{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
+.place{font-size:13px;color:var(--sub)}
+h3{font-size:18px;line-height:1.4;font-weight:700}
+.badge{flex-shrink:0;background:var(--ball);color:#1B1F1C;font-size:13px;font-weight:700;padding:6px 10px;border-radius:999px}
+.facts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.fact{background:var(--bg);border-radius:12px;padding:10px 12px;display:flex;flex-direction:column;gap:2px}
+.fact span{font-size:12px;color:var(--sub)}
+.fact b{font-size:15px;font-weight:600;font-variant-numeric:tabular-nums}
+.tags{display:flex;gap:6px;flex-wrap:wrap}
+.tag{font-size:12px;color:var(--sub2);border:1px solid var(--line);border-radius:6px;padding:3px 8px}
+.go{min-height:48px;border-radius:14px;background:var(--court);color:#fff;font-size:15px;font-weight:600;text-decoration:none;display:flex;align-items:center;justify-content:center;gap:6px}
+.go:hover{background:var(--court-d);color:#fff}
+details.closed summary{min-height:44px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;font-size:15px;font-weight:700;color:var(--sub2);list-style:none}
+details.closed summary::-webkit-details-marker{display:none}
+details.closed summary::after{content:"펼치기";font-size:12px;font-weight:600;color:var(--sub)}
+details.closed[open] summary::after{content:"접기"}
+.crow{background:var(--closedbg);border-radius:14px;padding:14px 16px;display:flex;justify-content:space-between;align-items:center;gap:12px;margin-top:10px}
+.crow .n{display:flex;flex-direction:column;gap:2px}
+.crow .n b{font-size:15px;font-weight:600;color:#3F4541}
+.crow .n span{font-size:12px;color:var(--sub)}
+.crow em{font-style:normal;font-size:12px;font-weight:600;color:var(--sub)}
+.pc-only{display:none}
+.tablebox{background:var(--card);border-radius:18px;overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:14px;min-width:560px}
+th{text-align:left;color:var(--sub);font-size:12px;font-weight:600;padding:12px 16px;border-bottom:1px solid var(--line)}
+td{padding:12px 16px;border-bottom:1px solid #EFEDE6;color:#3F4541}
+tr:last-child td{border-bottom:0}
+.empty{color:var(--sub);padding:20px 0;text-align:center}
+footer{font-size:12px;color:var(--sub);line-height:1.6}
+@media (min-width:900px){
+  .hero-in{padding:32px 40px;flex-direction:row;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:24px}
+  .hero-l{gap:12px}
+  .head-top{justify-content:flex-start;gap:16px}
+  .hero h1{font-size:36px;line-height:1.25}
+  .hero h1 br{display:none}
+  .stats{display:flex;gap:10px}
+  .stat{min-width:120px;border-radius:16px;padding:14px 18px}
+  .stat span{font-size:13px}
+  .stat b{font-size:30px}
+  .wrap{flex-direction:row;align-items:flex-start;gap:32px;padding:32px 40px 48px}
+  .panel{flex:0 0 260px;position:sticky;top:16px}
+  .pbox{padding:20px;gap:14px}
+  .search,.dayrow{display:flex}
+  main{flex:1 1 0}
+  h2{font-size:16px}
+  .grid{grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px}
+  .card{padding:20px}
+  h3{font-size:19px}
+  details.closed{display:none}
+  .pc-only{display:flex;flex-direction:column;gap:12px}
+}
 </style>
 </head>
 <body>
-<main>
-  <header class="top">
-    <h1>서울 테니스장 접수 현황</h1>
-    <p><span class="u">서울시 공공서비스예약 목록 기준입니다.</span> <span class="u">날짜·시간대별 빈자리는 예약 사이트에서 확인하세요.</span></p>
-    <p id="updated"></p>
-  </header>
-  <div class="bar">
-    <select id="gu" aria-label="구 선택"><option value="">전체 구</option></select>
-    <label class="chk"><input type="checkbox" id="onlyOpen"> 접수중만</label>
-    <span class="count" id="count"></span>
+<header class="hero"><div class="hero-in">
+  <div class="hero-l">
+    <div class="head-top">
+      <div class="brand"><svg width="28" height="28" viewBox="0 0 28 28" aria-hidden="true"><circle cx="14" cy="14" r="12" fill="#D9EA4F"/><path d="M5 7c5 3 5 11 0 14M23 7c-5 3-5 11 0 14" fill="none" stroke="#1B1F1C" stroke-width="1.6"/></svg>우리 모임 코트판</div>
+      <span class="updated" id="updated"></span>
+    </div>
+    <h1>서울 공공 테니스장<br> 지금 접수되는 곳</h1>
   </div>
-  <div id="notice"></div>
-  <div id="list"></div>
-  <footer><span class="u">출처: 서울 열린데이터광장 ‘서울시 체육시설 공공서비스예약 정보’.</span> <span class="u">예약은 서울시 공공서비스예약 사이트에서만 가능합니다.</span></footer>
-</main>
+  <div class="stats" aria-label="현황 요약">
+    <div class="stat"><span>접수중</span><b id="nOpen">0</b></div>
+    <div class="stat"><span>오픈 예정</span><b id="nSoon">0</b></div>
+    <div class="stat"><span>마감</span><b id="nClosed">0</b></div>
+  </div>
+</div></header>
+
+<div class="wrap">
+  <aside class="panel" aria-label="필터">
+    <div class="pbox">
+      <label class="search"><span class="flabel">코트 찾기</span><input type="search" id="q" placeholder="공원·코트 이름" autocomplete="off"></label>
+      <div class="grow"><div class="flabel">구</div><div class="chips" id="guChips"></div></div>
+      <div class="dayrow" id="dayBox"><div class="flabel">요일</div><div class="chips" id="dayChips"></div></div>
+      <label class="chk"><input type="checkbox" id="onlyOpen">접수중만 보기</label>
+    </div>
+    <p class="note"><span class="u">시간대별 빈자리는 예약 사이트에서 확인하세요.</span> <span class="u">예약은 각자 공식 사이트에서 합니다.</span></p>
+    <div id="notice"></div>
+  </aside>
+
+  <main>
+    <div id="list"></div>
+    <footer><span class="u">출처: 서울 열린데이터광장 ‘서울시 체육시설 공공서비스예약 정보’.</span> <span class="u">서울시 공공서비스예약 목록 기준입니다.</span></footer>
+  </main>
+</div>
+
 <script>
 (function(){
   var $=function(id){return document.getElementById(id)};
   var DATA=new URLSearchParams(location.search).get('data')||'data/courts.json';
-  var courts=[];
-  function parse(s){
-    if(!s) return null; var m=s.match(/(\d+)-(\d+)-(\d+)[ T](\d+):(\d+)/); if(!m) return null;
-    return new Date(+m[1],m[2]-1,+m[3],+m[4],+m[5]);
-  }
+  var courts=[],S={gu:'',day:'',only:false,q:''};
+  function parse(s){if(!s)return null;var m=s.match(/(\d+)-(\d+)-(\d+)[ T](\d+):(\d+)/);return m?new Date(+m[1],m[2]-1,+m[3],+m[4],+m[5]):null}
   function p2(n){return ('0'+n).slice(-2)}
-  function fmt(d){ return d?d.getFullYear()+'.'+p2(d.getMonth()+1)+'.'+p2(d.getDate())+' '+p2(d.getHours())+':'+p2(d.getMinutes()):'-'; }
-  function fmtDay(d){ return d?d.getFullYear()+'.'+p2(d.getMonth()+1)+'.'+p2(d.getDate()):'-'; }
-  function state(c,now){
-    var b=parse(c.RCPTBGNDT),e=parse(c.RCPTENDDT);
-    if(b&&now<b) return 'soon';
-    if(e&&now>e) return 'closed';
-    if(/마감|종료|중지/.test(c.SVCSTATNM)) return 'closed';
-    return 'open';
-  }
-  var LABEL={soon:'오픈 예정',open:'접수중',closed:'마감'};
-  function daytype(n){ return /평일/.test(n)?'평일':(/주말|휴일/.test(n)?'주말·공휴일':''); }
-  function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
+  function md(d){return d?p2(d.getMonth()+1)+'.'+p2(d.getDate()):'-'}
+  function mdt(d){return d?md(d)+' '+p2(d.getHours())+':'+p2(d.getMinutes()):'-'}
+  function state(c,now){var b=parse(c.RCPTBGNDT),e=parse(c.RCPTENDDT);
+    if(b&&now<b)return'soon'; if(e&&now>e)return'closed'; if(/마감|종료|중지/.test(c.SVCSTATNM))return'closed'; return'open'}
+  function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
   function safeUrl(u){return /^https:\/\/yeyak\.seoul\.go\.kr\//.test(u)?u:''}
-  function card(c){
-    var st=c._st,dt=daytype(c.SVCNM),url=safeUrl(c.SVCURL);
-    var tags=[c.AREANM,dt,c.METHOD,c.PAYATNM].filter(Boolean).map(function(t){return '<span class="tag">'+esc(t)+'</span>'}).join('');
-    return '<article class="card '+(st==='closed'?'closed':'')+'"><div class="row1"><div class="name">'+esc(c.SVCNM)+'</div><span class="badge b-'+st+'">'+LABEL[st]+'</span></div>'
-      +'<div class="tags">'+tags+'</div><dl>'
-      +'<dt>장소</dt><dd>'+esc(c.PLACENM||'-')+'</dd>'
-      +'<dt>접수</dt><dd>'+fmt(c._b)+' ~<br>'+fmt(c._e)+'</dd>'
-      +'<dt>이용</dt><dd>'+fmtDay(parse(c.SVCOPNBGNDT))+' ~ '+fmtDay(parse(c.SVCOPNENDDT))+(c.V_MIN?'<br>'+esc(c.V_MIN)+' ~ '+esc(c.V_MAX):'')+'</dd>'
-      +'</dl>'+(url?'<a class="go" href="'+esc(url)+'" target="_blank" rel="noopener">예약 사이트에서 보기</a>':'')+'</article>';
-  }
+  function daytype(n){return /평일/.test(n)?'평일':(/주말|휴일|토\/일/.test(n)?'주말·공휴일':'')}
+  function title(c){var m=(c.SVCNM||'').match(/^(.*?)\s*\((.*?)\)\s*-/);
+    if(m)return m[1].replace(/(\D)(\d)/,'$1 $2')+' · '+m[2].replace(/토\/일\/공휴일/,'주말·공휴일'); return c.SVCNM||'-'}
+  function place(c){return [c.AREANM,c.PLACENM].filter(Boolean).join(' · ')}
+  function range(c){return c.V_MIN?c.V_MIN+'–'+c.V_MAX:'-'}
+  function tags(c){var t=[];if(c.PAYATNM)t.push(c.PAYATNM);var e=parse(c.SVCOPNENDDT);if(e)t.push('이용 ~'+md(e));
+    return t.map(function(x){return'<span class="tag">'+esc(x)+'</span>'}).join('')}
+  function card(c){var st=c._st,url=safeUrl(c.SVCURL);
+    var second=st==='soon'?['접수 시작',mdt(c._b)]:['접수 마감',mdt(c._e)];
+    return '<article class="card '+st+'"><div class="r1"><div><div class="place">'+esc(place(c))+'</div><h3>'+esc(title(c))+'</h3></div>'
+     +'<span class="badge">'+(st==='soon'?'오픈 예정':'접수중')+'</span></div>'
+     +'<div class="facts"><div class="fact"><span>이용 시간</span><b>'+esc(range(c))+'</b></div><div class="fact"><span>'+second[0]+'</span><b>'+second[1]+'</b></div></div>'
+     +'<div class="tags">'+tags(c)+'</div>'
+     +(url?'<a class="go" href="'+esc(url)+'" target="_blank" rel="noopener">예약하러 가기 <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M5 3l5 5-5 5" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></a>':'')+'</article>'}
+  function chips(el,items,key){el.innerHTML=items.map(function(it){return'<button type="button" class="chip" data-v="'+esc(it[0])+'" aria-pressed="'+(S[key]===it[0])+'">'+esc(it[1])+'</button>'}).join('');
+    el.onclick=function(e){var b=e.target.closest('.chip');if(!b)return;S[key]=b.getAttribute('data-v');chips(el,items,key);render()}}
   function render(){
-    var gu=$('gu').value,only=$('onlyOpen').checked;
-    var list=courts.filter(function(c){return (!gu||c.AREANM===gu)&&(!only||c._st==='open')});
-    var order={soon:0,open:1,closed:2};
-    list.sort(function(a,b){
-      if(a._st!==b._st) return order[a._st]-order[b._st];
-      if(a._st==='soon') return (a._b-b._b)||0;
-      return (a.AREANM||'').localeCompare(b.AREANM||'','ko')||(a.SVCNM||'').localeCompare(b.SVCNM||'','ko');
-    });
-    $('count').textContent=list.length+'건';
-    if(!list.length){$('list').innerHTML='<p class="empty">조건에 맞는 코트가 없습니다.</p>';return}
-    var html='',cur=null,grid='',titles={soon:'오픈 예정 (접수 시작 시각 순)',open:'접수중',closed:'마감'};
-    list.forEach(function(c){
-      if(c._st!==cur){ if(cur!==null) html+='<div class="grid">'+grid+'</div>'; grid=''; cur=c._st; html+='<h2>'+titles[cur]+'</h2>'; }
-      grid+=card(c);
-    });
-    $('list').innerHTML=html+'<div class="grid">'+grid+'</div>';
+    var q=S.q.trim().toLowerCase();
+    var list=courts.filter(function(c){
+      if(S.gu&&c.AREANM!==S.gu)return false;
+      if(S.day&&daytype(c.SVCNM)!==S.day)return false;
+      if(q&&((c.SVCNM||'')+' '+(c.PLACENM||'')).toLowerCase().indexOf(q)<0)return false;
+      return true});
+    var soon=list.filter(function(c){return c._st==='soon'}).sort(function(a,b){return a._b-b._b});
+    var open=list.filter(function(c){return c._st==='open'}).sort(function(a,b){return (a._e-b._e)||0});
+    var closed=list.filter(function(c){return c._st==='closed'});
+    ['open','soon','closed'].forEach(function(s){$('n'+s.charAt(0).toUpperCase()+s.slice(1)).textContent=courts.filter(function(c){return c._st===s}).length});
+    var h='<section><h2>오픈 예정'+(soon.length?' '+soon.length+'곳':'')+'</h2>'+(soon.length?'<div class="grid">'+soon.map(card).join('')+'</div>':'<div class="dash">새로 열릴 접수가 생기면 여기 맨 위에 시각과 함께 뜹니다.</div>')+'</section>';
+    h+='<section><h2>접수중 '+open.length+'곳</h2>'+(open.length?'<div class="grid">'+open.map(card).join('')+'</div>':'<p class="empty">조건에 맞는 접수중 코트가 없습니다.</p>')+'</section>';
+    if(!S.only&&closed.length){
+      h+='<section><details class="closed"><summary>마감 '+closed.length+'곳</summary>'+closed.map(function(c){return'<div class="crow"><div class="n"><b>'+esc(title(c))+'</b><span>'+esc(place(c))+'</span></div><em>마감</em></div>'}).join('')+'</details>'
+       +'<div class="pc-only"><h2>마감 '+closed.length+'곳</h2><div class="tablebox"><table><thead><tr><th>구 · 장소</th><th>코트</th><th>이용 시간</th><th>접수 마감</th><th>상태</th></tr></thead><tbody>'
+       +closed.map(function(c){return'<tr><td>'+esc(place(c))+'</td><td>'+esc(title(c))+'</td><td>'+esc(range(c))+'</td><td>'+mdt(c._e)+'</td><td>마감</td></tr>'}).join('')+'</tbody></table></div></div></section>'}
+    $('list').innerHTML=h;
   }
   fetch(DATA,{cache:'no-store'}).then(function(r){if(!r.ok)throw new Error(r.status);return r.json()}).then(function(d){
     var now=new Date();
     courts=d.courts.map(function(c){c._b=parse(c.RCPTBGNDT);c._e=parse(c.RCPTENDDT);c._st=state(c,now);return c});
-    $('updated').textContent='마지막 갱신 '+fmt(parse(d.updated_at))+' · 코트 서비스 '+d.count+'건';
-    if(d.sample_key) $('notice').innerHTML='<div class="notice">샘플 인증키 데이터입니다(5건 제한). 실제 키를 넣고 수집 스크립트를 다시 실행하세요.</div>';
+    var u=parse(d.updated_at);$('updated').textContent=u?mdt(u)+' 갱신':'';
+    if(d.sample_key)$('notice').innerHTML='<div class="notice">샘플 인증키 데이터입니다(5건 제한). 실제 키를 넣으면 전체 코트가 표시됩니다.</div>';
     var gus=Array.from(new Set(courts.map(function(c){return c.AREANM}).filter(Boolean))).sort(function(a,b){return a.localeCompare(b,'ko')});
-    $('gu').innerHTML='<option value="">전체 구</option>'+gus.map(function(g){return '<option>'+esc(g)+'</option>'}).join('');
-    $('gu').onchange=render;$('onlyOpen').onchange=render;render();
-  }).catch(function(){$('list').innerHTML='<p class="empty">data/courts.json 을 불러오지 못했습니다. 로컬 서버(python -m http.server)로 여세요.</p>'});
+    chips($('guChips'),[['','전체']].concat(gus.map(function(g){return[g,g]})),'gu');
+    chips($('dayChips'),[['','전체'],['평일','평일'],['주말·공휴일','주말·공휴일']],'day');
+    $('q').oninput=function(){S.q=this.value;render()};
+    $('onlyOpen').onchange=function(){S.only=this.checked;render()};
+    render();
+  }).catch(function(){$('list').innerHTML='<p class="empty">data/courts.json 을 불러오지 못했습니다.</p>'});
 })();
 </script>
 </body>
