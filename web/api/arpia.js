@@ -4,7 +4,7 @@
 // 응답에는 시간대·상태만 담는다(예약자 필드는 읽지도 않음).
 const OFFICIAL = "https://publicsports.yongin.go.kr/publicsports/sports/selectRegistTimeByChosenDateFcltyRceptResveApply.do";
 const IDS_URL = "https://yschoi128.github.io/club-court-board/data/yongin.json";
-const ALLOW_ORIGINS = ["https://yschoi128.github.io", "http://127.0.0.1:18911", "http://localhost:18911"];
+const ALLOW_ORIGINS = ["http://127.0.0.1:18911", "http://localhost:18911"];   // 같은 출처 호출이 기본(CORS 불필요). 로컬 시험용만 허용
 const COURTS = [
   { key: "c1", name: "1코트" }, { key: "c2", name: "2코트" },
   { key: "c3", name: "3코트" }, { key: "cd", name: "장애인 코트" },

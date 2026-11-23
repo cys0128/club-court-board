@@ -5,7 +5,7 @@
 
 ## 구성
 - `fetch_courts.py` — 열린데이터광장 OpenAPI 에서 테니스장만 받아 `data/courts.json` 저장 (표준 라이브러리만, 한 번 실행 = 한 번 갱신)
-- `index.html` — `data/courts.json` 을 읽어 카드로 표시. 필터: 구, 접수중만. 접수 시작이 미래면 "오픈 예정"으로 맨 위
+- `web/index.html` — `data/courts.json` 을 읽어 카드로 표시. 필터: 구, 접수중만. 접수 시작이 미래면 "오픈 예정"으로 맨 위
 - `data/fixture.json` — 화면 확인용 가짜 데이터(오픈 예정·마감 섞음). `index.html?data=data/fixture.json` 으로 연다
 - `screens/` — 검증 캡처
 
@@ -80,11 +80,16 @@ python -m http.server 18911            # 후 http://127.0.0.1:18911/index.html (
 - 서울 수집은 건드리지 않는다. 서울은 매시 정각 실행(분<15)·수동·push 때만 돌고, 그 외 실행은 배포된 이전 `courts.json` 을 유지해서 올린다.
 - 공휴일은 `HOLIDAYS` 에 직접 관리(해마다 갱신).
 
-## 용인 "지금 확인" — 실시간 조회 함수 (live/)
+## 배포 구조 (2026-11-23 변경)
+- **화면+실시간 함수 = Vercel 프로젝트 `club-court-board`** (`web/`): https://club-court-board.vercel.app/ . `web/index.html`(화면), `web/api/arpia.js`(실시간 조회), `web/vercel.json`(리전 hnd1). 배포: `cd web && vercel deploy --prod --yes --name club-court-board`(이 PC 의 개인 Vercel 계정, 시크릿 없음). 화면이 바뀔 때만 배포하면 된다(Hobby 하루 100회 제한).
+- **수집 = GitHub Actions**(15분·서울 1시간)가 `data/courts.json`·`data/yongin.json` 을 GitHub Pages 에 올린다. Vercel 화면은 그 JSON 을 `https://yschoi128.github.io/club-court-board/data/...` 에서 읽는다(GitHub Pages 는 CORS `*`). 그래서 수집 때마다 Vercel 을 재배포하지 않는다.
+- **GitHub Pages 의 `index.html`** 은 새 주소 안내 배너 + 3초 자동 이동(`https://club-court-board.vercel.app/`). 데이터 보관용으로만 계속 쓴다.
+- 화면 시험: `python -m http.server 18911 --directory web` 후 `http://127.0.0.1:18911/?ydata=data/yongin-fixture.json#yongin` (시험용 데이터는 `web/data/`).
+
+## 용인 "지금 확인" — 실시간 조회 함수 (web/api/arpia.js)
 수집(15분)과 별개로, 화면에서 사람이 **지금 확인** 버튼을 누를 때만 공식 사이트를 그 날짜 1일치(4면=4건) 조회한다.
-- 함수: `live/api/arpia.js` → Vercel 프로젝트 `club-court-live`, `GET https://club-court-live.vercel.app/api/arpia?date=YYYYMMDD`. 리전 **hnd1**(ytcc 의 icn1 과 IP 분리), Node 24.
+- 같은 출처 `GET /api/arpia?date=YYYYMMDD`. 리전 **hnd1**(ytcc 의 icn1 과 IP 분리), Node 24.
 - 열린 프록시 방지: `date` 하나만 허용(다른 파라미터 400), 오늘~다음 달 말일만, 아르피아 4면 resveId(공개 `data/yongin.json` 의 `ids` + 시드)만 호출. 다른 resveId·경로 호출 불가.
 - 공식 요청 4건은 건 사이 1초. 응답은 시간대·상태만(예약자 필드 제외). 캐시 `s-maxage=60, stale-while-revalidate=60` + 인스턴스 메모리 60초 → 같은 날짜는 1분 안에 공식 재조회 안 함.
 - 전역 제한: 인스턴스 기준 분당 공식 요청 12건 초과 시 429. 공식 오류·비정상 응답이면 즉시 실패(재시도 없음) + 60초간 공식 호출 중단(503). 화면은 기존 데이터를 유지하고 안내만 띄운다.
-- CORS: `https://yschoi128.github.io`(와 로컬 시험 `127.0.0.1:18911`)만 허용. 화면은 자동 호출하지 않는다.
-- 배포: `cd live && vercel deploy --prod --yes --name club-court-live` (개인 Vercel 계정). 시크릿 없음.
+- CORS: 같은 출처 호출이라 불필요(로컬 시험 `127.0.0.1:18911` 만 허용). 화면은 자동 호출하지 않는다.
