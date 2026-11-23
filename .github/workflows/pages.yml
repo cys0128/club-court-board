@@ -1,7 +1,7 @@
 name: pages
+# 예약 실행(스케줄) 없음: 아무도 안 보는 동안 서울·용인을 받지 않는다. 서울은 화면이 /api/seoul(Vercel)에서, 용인은 /api/arpia 에서 열 때 가져온다.
+# 이 워크플로는 GitHub Pages(이동 안내 페이지 + 마지막 저장본 data/*.json)를 올릴 때만 수동(또는 master 푸시)으로 돈다.
 on:
-  schedule:
-    - cron: "0 * * * *"   # 서울 OpenAPI 1시간 수집만. 용인은 백그라운드 수집을 끄고 화면이 열릴 때 공식 사이트에서 가져옴
   workflow_dispatch:
   push:
     branches: [master]
@@ -20,25 +20,12 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-      - name: fetch courts (서울, 키 없으면 sample)
-        env:
-          SEOUL_API_KEY: ${{ secrets.SEOUL_API_KEY }}
-        run: python fetch_courts.py
-      - name: 용인 마지막 저장본 유지 (더는 수집하지 않음 — 배포된 yongin.json 을 그대로 다시 올림)
-        run: |
-          mkdir -p data
-          curl -fsS -m 30 https://yschoi128.github.io/club-court-board/data/yongin.json -o data/yongin.json || rm -f data/yongin.json
-          python -c "import json;json.load(open('data/yongin.json',encoding='utf-8'))" 2>/dev/null || rm -f data/yongin.json
-          [ -f data/yongin.json ] || cp data/yongin-saved.json data/yongin.json   # 내려받기 실패 시 저장소에 보관한 마지막 저장본(11-23)
-      - name: build site (courts.json 은 커밋하지 않고 산출물로만)
+      - name: build site (수집 없음 — 저장소에 보관한 마지막 저장본만 올림)
         run: |
           mkdir -p _site/data
           cp index.html _site/
-          cp data/courts.json _site/data/
-          cp data/yongin.json _site/data/ || true
+          cp data/courts.json _site/data/courts.json
+          cp data/yongin-saved.json _site/data/yongin.json
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:

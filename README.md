@@ -112,3 +112,9 @@ python -m http.server 18911            # 후 http://127.0.0.1:18911/index.html (
   4. 새로 고침 버튼은 ①부터 다시(서버 10분 캐시 안이면 공식 요청 0). 예약 미오픈 달(404)은 건너뜀.
 - 함수 `/api/arpia`: 캐시 `s-maxage=600, stale-while-revalidate=600` + 인스턴스 메모리 10분(같은 날짜는 10분에 1번만 공식 호출), 4면 순차(1초), 오류 시 즉시 실패·60초 쉼, 분당 공식 요청 상한 **20건**(첫 접속 ①의 16건이 들어가도록 12→20).
 - 접속 1회당 공식 요청 상한: 아래 보고 참고(한 인스턴스 분당 20건 상한 때문에 ② 는 상한에서 429 로 멈춘다).
+
+## 서울도 "열 때 가져오기" (2026-11-23)
+- **GitHub Actions 예약(스케줄) 제거.** 워크플로는 수동 실행·master 푸시 때만 돌며 GitHub Pages(이동 안내 + 마지막 저장본 `data/courts.json`·`data/yongin.json`)를 올릴 뿐, 서울·용인을 받지 않는다(서울 `SEOUL_API_KEY` GitHub secret 도 더는 쓰지 않음).
+- `GET /api/seoul`(`web/api/seoul.js`, Vercel): 서울 열린데이터 ListPublicReservationSport(HTTP 전용)에서 테니스장만 받아 `courts.json` 과 같은 형식으로 반환. 캐시 `s-maxage=3600, stale-while-revalidate=3600`(+ 인스턴스 메모리 1시간). 인증키는 Vercel 환경변수 `SEOUL_API_KEY`(production, 시크릿으로 저장 — 코드·로그·응답·커밋에 없음). 키 교체: `cd web && printf '%s' "<키>" | vercel env add SEOUL_API_KEY production --sensitive --yes` 후 재배포.
+- 화면: 서울 탭은 `/api/seoul` 을 읽고, 실패하면 GitHub Pages 의 마지막 `courts.json` 을 흐리게(저장본) 표시. 문구 "서울 데이터는 열 때 가져옵니다(최대 1시간 저장)".
+- `data/courts.json` 은 이제 저장소에 커밋된 마지막 저장본(2026-11-23 16:20, 318곳)이다.
