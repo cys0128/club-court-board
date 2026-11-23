@@ -106,8 +106,23 @@ footer{font-size:12px;color:var(--sub);line-height:1.6}
 .tabs{display:flex;gap:8px}
 .tab{min-height:44px;padding:0 20px;border-radius:999px;border:1px solid rgba(255,255,255,.35);background:transparent;color:#fff;font-size:15px;font-weight:600;cursor:pointer}
 .tab[aria-selected=true]{background:var(--ball);border-color:var(--ball);color:#1B1F1C}
-.tab:focus-visible,.nx a:focus-visible{outline:3px solid #fff;outline-offset:2px}
+.tab:focus-visible,.ol:focus-visible{outline:3px solid #fff;outline-offset:2px}
 #yWrap{display:none}
+.nxg{margin:0 0 8px}
+.nxlist{display:flex;flex-direction:column;gap:10px;margin:0;padding:0;list-style:none}
+.nxd{background:var(--bg);border-radius:14px;padding:10px 14px 4px;box-shadow:inset 0 0 0 1.5px var(--ball)}
+.nxdh{font-size:15px;font-weight:700;color:var(--sub2)}
+.nxr{display:flex;flex-direction:column;gap:4px;padding:8px 0 10px;border-top:1px solid #DAD6CA}
+.nxd .nxdh+.nxr{border-top:0;padding-top:4px}
+.nxr1{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.nxr1 b{font-size:16px;font-variant-numeric:tabular-nums}
+.nxw{display:flex;align-items:center;gap:8px;white-space:nowrap}
+.nxw .wxn{margin-left:0}
+.nxr2{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.nxr2 .live{margin-left:auto}
+.nxr2 .ol{padding:0 8px;font-size:12.5px}
+.nxr2 .live{padding:0 10px}
+.nxr2{gap:4px}
 .wx{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:600;color:var(--sub2);font-variant-numeric:tabular-nums}
 .wx svg{flex-shrink:0}
 .wm{position:absolute;top:2px;right:2px;display:flex;gap:1px;pointer-events:none}
@@ -133,19 +148,13 @@ footer{font-size:12px;color:var(--sub);line-height:1.6}
 .rf:focus-visible{outline:3px solid #fff;outline-offset:2px}
 .rf.spin svg{animation:sp .8s linear infinite}
 @keyframes sp{to{transform:rotate(360deg)}}
-.nxc{display:flex;flex-wrap:wrap;align-items:center;gap:6px}
 .ol{min-height:44px;display:inline-flex;align-items:center;padding:0 12px;border-radius:999px;background:#fff;border:1px solid var(--line);color:var(--court);font-size:13px;font-weight:600;text-decoration:none}
 .ol:hover{background:var(--court);color:#fff}
 .ol:focus-visible{outline:3px solid #2F7FD8;outline-offset:2px}
 a.cell{text-decoration:none}
 a.cell:hover{filter:brightness(.95)}
 a.cell:focus-visible{outline:3px solid #2F7FD8;outline-offset:1px}
-.nxcap{font-size:12px;color:var(--sub)}
 .ycard{background:var(--card);border-radius:18px;padding:18px;display:flex;flex-direction:column;gap:14px;box-shadow:0 1px 2px rgba(27,31,28,.06)}
-.nxlist{display:flex;flex-direction:column;gap:8px;margin:0;padding:0;list-style:none}
-.nx{display:flex;flex-direction:column;align-items:flex-start;gap:6px;min-height:48px;background:var(--bg);border-radius:12px;padding:8px 14px;box-shadow:inset 0 0 0 1.5px var(--ball)}
-.nx b{font-size:16px;font-variant-numeric:tabular-nums}
-.nx span{font-size:14px;color:var(--court);font-weight:600}
 .ytab{min-width:0;font-size:13px;table-layout:fixed;width:100%}
 .ytab th,.ytab td{padding:8px 3px;text-align:center;border-bottom:1px solid #EFEDE6;font-size:11px;white-space:nowrap}
 .ytab th[scope=row],.ytab th:first-child{white-space:normal;font-size:12px}
@@ -346,6 +355,16 @@ a.cell:focus-visible{outline:3px solid #2F7FD8;outline-offset:1px}
   $('yDays').addEventListener('click',liveClick);$('yNext').addEventListener('click',liveClick);
   var yKind='';   // '' 전체 | 'wd' 평일 | 'we' 주말·공휴일
   function ago(iso){var d=parse(iso);if(!d)return'';var h=Math.floor((new Date()-d)/36e5);return h<1?'방금 확인':h+'시간 전 확인'}
+  function wxDayMini(day){var w=WX.yongin;if(!w)return'';var i=w.days.indexOf(day);if(i<0||w.max[i]==null)return'';
+    return'<span class="wx">'+wxIcon(w.code[i],16)+Math.round(w.max[i])+'°</span>'}
+  function nxHtml(nxt){
+    var rows=nxt.slice(0,10),groups=[];
+    rows.forEach(function(n){var g=groups[groups.length-1];if(!g||g.day!==n.day){g={day:n.day,rows:[]};groups.push(g)}g.rows.push(n)});
+    return'<p class="note nxg">코트를 누르면 공식 예약 페이지, 지금 확인은 그 시각 공식 사이트 조회</p><ul class="nxlist">'+groups.map(function(g){
+      return'<li class="nxd"><div class="nxdh">'+dlabel(g.day)+'</div>'+g.rows.map(function(n){
+        return'<div class="nxr"><div class="nxr1"><b>'+n.s+'–'+n.e+'</b><span class="nxw">'+wxNote(n.day,n.s,n.e)+wxDayMini(n.day)+'</span></div>'
+          +'<div class="nxr2">'+n.c.map(function(nm,i){return'<a class="ol" href="'+esc(curl(n.day,n.k[i]))+'" target="_blank" rel="noopener" aria-label="'+esc(dlabel(n.day)+' '+n.s+' '+nm+' 공식 예약 페이지')+'">'+esc(nm)+' ↗</a>'}).join('')+liveBtn(n.day)+'</div></div>'}).join('')+'</li>'}).join('')+'</ul>'
+      +(nxt.length>10?'<p class="note" style="margin-top:8px">가까운 10개만 보여 줍니다. 전체 '+nxt.length+'개는 아래 시간표에서 확인하세요.</p>':'')}
   function yrender(){
     if(!yd){return}
     var now=new Date(),courts=yd.courts||[],weekend=yd.weekend||[],chk=yd.checked||{},nOpen=0,nxt=[];
@@ -373,7 +392,7 @@ a.cell:focus-visible{outline:3px solid #2F7FD8;outline-offset:1px}
         +'</tbody></table></div></details>'});
     $('yDays').innerHTML=dh||'<p class="empty">표시할 날짜가 없습니다.</p>';
     nxt.sort(function(a,b){return a.day<b.day?-1:a.day>b.day?1:a.s<b.s?-1:1});
-    $('yNext').innerHTML=nxt.length?'<ul class="nxlist">'+nxt.slice(0,10).map(function(n){return'<li class="nx"><b>'+dlabel(n.day)+' '+n.s+'–'+n.e+'</b>'+wxNote(n.day,n.s,n.e)+'<div class="nxc"><span class="nxcap">공식 사이트에서 지금 확인</span>'+n.c.map(function(nm,i){return'<a class="ol" href="'+esc(curl(n.day,n.k[i]))+'" target="_blank" rel="noopener" aria-label="'+esc(nm+' 공식 사이트에서 지금 확인')+'">'+esc(nm)+' ↗</a>'}).join('')+liveBtn(n.day)+'</div></li>'}).join('')+'</ul>'+(nxt.length>10?'<p class="note" style="margin-top:8px">가까운 10개만 보여 줍니다. 전체 '+nxt.length+'개는 아래 시간표에서 확인하세요.</p>':'')
+    $('yNext').innerHTML=nxt.length?nxHtml(nxt)
       :'<div class="dash">지금 확인된 '+(yKind==='wd'?'평일':yKind==='we'?'주말·공휴일':'')+' 빈자리가 없습니다. 취소분이 나오면 15분 안팎으로 여기 맨 위에 뜹니다.</div>';
     if(tab==='yongin'){$('nOpen').textContent=nOpen;$('nSoon').textContent=days.length;$('nClosed').textContent=courts.length;$('updated').textContent=yongUpd}
   }
