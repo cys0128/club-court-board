@@ -31,6 +31,13 @@
    ```
    (또는 환경변수 `SEOUL_API_KEY`). 키가 없으면 `sample` 로 동작하고 화면에 샘플 안내가 뜬다.
 
+## 공개 URL (GitHub Pages)
+https://yschoi128.github.io/club-court-board/
+
+- GitHub Actions(`.github/workflows/pages.yml`)가 매시 정각(UTC cron `0 * * * *`)과 수동 실행(workflow_dispatch)·master 푸시 때 `fetch_courts.py` 를 돌려 `data/courts.json` 을 만들고 Pages 로 배포한다. courts.json 은 배포 산출물로만 들어가며 저장소에 커밋하지 않는다.
+- 키 넣는 방법: `gh secret set SEOUL_API_KEY -R yschoi128/club-court-board` (프롬프트에 키 붙여넣기). 없으면 sample 로 동작한다.
+- 수동 실행: `gh workflow run pages.yml -R yschoi128/club-court-board`
+
 ## 실행
 ```
 python fetch_courts.py                 # data/courts.json 갱신
