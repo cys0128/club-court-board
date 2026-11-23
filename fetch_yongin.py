@@ -4,7 +4,8 @@
 - 공식 사이트가 로그인 없이 화면에서 쓰는 AJAX 1종만 호출한다(다른 경로 추측 호출 없음, 로그인·쿠키·계정 없음):
   POST https://publicsports.yongin.go.kr/publicsports/sports/selectRegistTimeByChosenDateFcltyRceptResveApply.do
   form: dateVal=YYYYMMDD&resveId=<코트 월별 ID>   → JSON(fcltRceptRsvctmTime[] 등)
-- 범위: 오늘부터 14일 전체 × 4면(56건)을 한 번에 받지 않고, 실행(매시)마다 4일씩(=16건) 가장 오래 확인 안 한 날부터 돌아가며 받는다.
+- 범위: 평일은 오늘부터 14일, 주말·공휴일은 다음 달 말일까지 전부 × 4면. 한 번에 받지 않고 실행(15분)마다 4일씩(=16건) 가장 오래 확인 안 한 날부터 돌아가며 받는다.
+- 코트 ID 는 월마다 다르다. 아직 ID 를 모르는 달(예약 미오픈)은 건너뛰고, 공식 시설 목록(비로그인, 수지구·테니스 필터)에서 PROBE_HOURS 마다 ID 를 찾아 생기면 자동 포함한다(요청 3~4건, 그 실행의 날짜 수를 줄여 16건 안에 맞춤).
   주말·공휴일은 오래됨 점수를 2배로 쳐서 조금 더 자주 받는다. 요청 사이 GAP 초, 실행당 상한 MAX_REQ 건.
 - 응답에서 시간대(useTm)·상태(rsvctmStts)만 저장한다. 예약자 관련 필드(frstRegisterNmApply 등)는 읽지도 저장하지도 않는다.
 - 차단·오류 징후(HTTP 오류·리다이렉트·JSON 아님·필수 키 없음·빈 응답)가 한 번이라도 나오면 즉시 중단하고
@@ -28,7 +29,10 @@ DAYS_PER_RUN = 4   # 실행당 날짜 수(4일 × 4면 = 16건)
 MIN_MIN = 12       # 평소: 15분 cron 사이 지연·겹친 실행 흡수(직전 시도 후 12분 안이면 건너뜀)
 BACKOFF_MIN = 28   # 차단 징후 뒤: 30분 간격(15분 cron 한 번 걸러 실행)
 BACKOFF_CLEAR = 3  # 물러난 뒤 연속 성공 3회면 평소 간격으로 복귀
-DAYS = 14
+DAYS = 14          # 평일은 오늘부터 14일
+PROBE_HOURS = 3    # 새 달 코트 ID 탐색 최소 간격
+LIST_URL = "https://publicsports.yongin.go.kr/publicsports/sports/selectFcltyRceptResveListU.do"
+PROBE_MAX_PAGES = 4
 
 # 코트 → 월별 resveId (공식 사이트 코트 ID는 월마다 다름. ytcc.info/courts.json 을 참고용으로만 읽어 옮김, 2026-11-23)
 # 새 달 ID 를 추가하지 않으면 그 달 날짜는 수집하지 않고 data 의 missing_months 에 표시한다.
@@ -40,7 +44,7 @@ COURTS = [
 ]
 # 공휴일(주말 외). 대체공휴일 포함. 해마다 갱신 필요.
 HOLIDAYS = {"2026-12-25", "2027-01-01", "2027-02-06", "2027-02-07", "2027-02-08", "2027-02-09",
-            "2027-03-01", "2027-03-02", "2027-05-05", "2027-05-13"}
+            "2027-03-01", "2027-05-05", "2027-05-13"}
 
 
 
@@ -69,27 +73,90 @@ def is_weekend(d):
     return d.weekday() >= 5 or d.isoformat() in HOLIDAYS
 
 
-def plan(today, checked, now):
-    """오늘부터 DAYS일 중 가장 오래 확인 안 한 DAYS_PER_RUN 일(주말·공휴일은 2배 가중) × 코트."""
-    window = [today + timedelta(days=i) for i in range(DAYS)]
+def month_end_next(today):
+    y, m = today.year + (today.month == 12), (today.month % 12) + 1      # 다음 달
+    ny, nm = y + (m == 12), (m % 12) + 1
+    return date(ny, nm, 1) - timedelta(days=1)
+
+
+def window_days(today):
+    end = month_end_next(today)
+    out, d = [], today
+    while d <= end:
+        if (d - today).days < DAYS or is_weekend(d):
+            out.append(d)
+        d += timedelta(days=1)
+    return out
+
+
+def plan(today, checked, now, ids, max_req):
+    """창 안에서 가장 오래 확인 안 한 날부터(주말·공휴일 2배 가중) DAYS_PER_RUN 일 × 코트. ids = {월: {코트키: id}}"""
+    window = window_days(today)
     def score(d):
         c = checked.get(d.isoformat())
         age = float("inf") if not c else (now - datetime.fromisoformat(c)).total_seconds() / 3600
         return (age * (2 if is_weekend(d) else 1), -d.toordinal())   # 동점이면 가까운 날 먼저
     missing, usable = set(), []
     for d in window:
-        if all(c["ids"].get(d.strftime("%Y-%m")) is None for c in COURTS):
+        if not ids.get(d.strftime("%Y-%m")):
             missing.add(d.strftime("%Y-%m")); continue
         usable.append(d)
-    picked = sorted(sorted(usable, key=score, reverse=True)[:DAYS_PER_RUN])
+    n_days = max(0, min(DAYS_PER_RUN, max_req // len(COURTS)))
+    picked = sorted(sorted(usable, key=score, reverse=True)[:n_days])
     reqs = []
     for d in picked:
         for c in COURTS:
-            rid = c["ids"].get(d.strftime("%Y-%m"))
+            rid = ids[d.strftime("%Y-%m")].get(c["key"])
             if rid is None:
-                missing.add(d.strftime("%Y-%m")); continue
+                continue
             reqs.append((d, c, rid))
-    return window, picked, reqs[:MAX_REQ], sorted(missing), len(reqs) > MAX_REQ
+    return window, picked, reqs[:max_req], sorted(missing)
+
+
+COURT_RE = re.compile(r"아르피아\s*테니스장\s*\((.*?)\)\s*_\s*(\d{1,2})월")
+KEY_OF = {"1코트": "c1", "2코트": "c2", "3코트": "c3", "장애인코트": "cd"}
+ITEM_RE = re.compile(r'reserve_title">\s*(.*?)<div class="reserve_position">.*?이용기간 : (\d{4})-(\d{2})-\d{2}.*?resveId=(\d+)', re.S)
+
+
+def _get(url, data=None):
+    req = urllib.request.Request(url, data=data, method="POST" if data else "GET",
+                                 headers={"User-Agent": "club-court-board/1.0"})
+    try:
+        with urllib.request.urlopen(req, timeout=30) as r:
+            if r.status != 200:
+                raise Abort(f"목록 HTTP {r.status}")
+            body = r.read().decode("utf-8", "replace")
+    except Abort:
+        raise
+    except Exception as e:
+        raise Abort(f"목록 {type(e).__name__}: {str(e)[:100]}")
+    if "reserve_box_item" not in body:
+        raise Abort("목록 형식 이상")
+    return body
+
+
+def discover_ids():
+    """공식 시설 목록(비로그인 공개 화면, 수지구·테니스 필터)에서 아르피아 코트의 월별 resveId 를 찾는다. 요청 ≤ PROBE_MAX_PAGES 건."""
+    found, n = {}, 0
+    q = "key=&pageUnit=8&checkSearchMonthNow=false&searchFcltyGu=BALCGU&searchFcltyFieldNm=ITEM_01"
+    for page in range(1, PROBE_MAX_PAGES + 1):
+        if n:
+            time.sleep(GAP)
+        n += 1
+        body = _get(LIST_URL + "?key=&searchResveType=", b"searchFcltyGu=BALCGU&searchFcltyFieldNm=ITEM_01") if page == 1             else _get(f"{LIST_URL}?{q}&pageIndex={page}")
+        hit = False
+        for title, yy, mm, rid in ITEM_RE.findall(body):
+            m = COURT_RE.search(title)
+            if not m:
+                continue
+            key = KEY_OF.get(m.group(1).replace(" ", ""))
+            if key:
+                found.setdefault(f"{yy}-{mm}", {})[key] = int(rid); hit = True
+        if page > 1 and not hit:
+            break          # 아르피아 목록 구간을 지났음
+        if "pageIndex=" + str(page + 1) not in body:
+            break
+    return found, n
 
 
 def call(d, rid):
@@ -163,10 +230,28 @@ def main():
     if prev and prev.get("updated_at"):   # 날짜별 시각이 없던 옛 형식 데이터는 전체 갱신 시각으로 대신함
         for dd in (prev.get("days") or {}):
             checked_prev.setdefault(dd, prev["updated_at"])
-    window, picked, reqs, missing, truncated = plan(t.date(), checked_prev, t)
-    print(f"계획: 이번 날짜 {[d.isoformat() for d in picked]} → 요청 {len(reqs)}건(상한 {MAX_REQ}), ID 없는 달 {missing}, 잘림 {truncated}")
-    result, stts_seen, n = {}, set(), 0
+    ids = {}
+    for c in COURTS:                      # 코드에 적어 둔 ID + 이전에 찾아 둔 ID
+        for mo, rid in c["ids"].items():
+            ids.setdefault(mo, {})[c["key"]] = rid
+    for mo, kv in ((prev or {}).get("ids") or {}).items():
+        ids.setdefault(mo, {}).update({k: int(v) for k, v in kv.items()})
+    probe_at = (prev or {}).get("id_probe_at")
+    need_months = {d.strftime("%Y-%m") for d in window_days(t.date())}
+    incomplete = [mo for mo in sorted(need_months) if len(ids.get(mo, {})) < len(COURTS)]
+    result, stts_seen, n, probed = {}, set(), 0, False
     try:
+        if incomplete and (force or not probe_at or (t - datetime.fromisoformat(probe_at)).total_seconds() >= PROBE_HOURS * 3600):
+            found, pn = discover_ids()      # 공식 시설 목록에서 새 달 ID 탐색
+            n += pn; probed = True
+            for mo, kv in found.items():
+                ids.setdefault(mo, {}).update(kv)
+            print(f"ID 탐색 {pn}건: {{ {', '.join(f'{m}:{len(v)}면' for m, v in sorted(found.items()))} }} (없는 달 {[m for m in incomplete if len(ids.get(m, {})) < len(COURTS)]})")
+            time.sleep(GAP)
+        window, picked, reqs, missing = plan(t.date(), checked_prev, t, ids, MAX_REQ - n)
+        truncated = False
+        print(f"계획: 이번 날짜 {[d.isoformat() for d in picked]} → 요청 {len(reqs)}건(상한 {MAX_REQ}, 탐색 {n}건 포함), ID 없는 달 {missing}")
+        n0 = n
         for d, c, rid in reqs:
             if n:
                 time.sleep(GAP)
@@ -174,7 +259,7 @@ def main():
             slots = call(d, rid)
             stts_seen.update(s["stts"] for s in slots)
             result.setdefault(d.isoformat(), {})[c["key"]] = slots
-            print(f"[{n}/{len(reqs)}] {d} {c['name']} id={rid}: {len(slots)}칸 {sorted({s['stts'] for s in slots})}")
+            print(f"[{n - n0}/{len(reqs)}] {d} {c['name']} id={rid}: {len(slots)}칸 {sorted({s['stts'] for s in slots})}")
     except Abort as e:
         print(f"중단({n}번째 요청): {e} → 이전 데이터 유지", file=sys.stderr)
         base = prev or {"updated_at": None, "courts": [{"key": c["key"], "name": c["name"]} for c in COURTS], "days": {}}
@@ -198,7 +283,7 @@ def main():
         "last_attempt_at": t.isoformat(timespec="seconds"), "last_request_count": n,
         "facility": "아르피아 테니스장", "official_url": OFFICIAL,
         "courts": [{"key": c["key"], "name": c["name"]} for c in COURTS],
-        "missing_months": missing, "truncated": truncated,
+        "missing_months": missing, "ids": ids, "id_probe_at": t.isoformat(timespec="seconds") if probed else probe_at,
         "stts_seen": sorted(set((prev or {}).get("stts_seen") or []) | stts_seen),
         "weekend": sorted(d for d in days_all if is_weekend(date.fromisoformat(d))),
         "checked": checked, "days": dict(sorted(days_all.items())),

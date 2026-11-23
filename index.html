@@ -170,7 +170,7 @@ footer{font-size:12px;color:var(--sub);line-height:1.6}
 <div class="wrap" id="yWrap"><main>
   <section aria-labelledby="yh"><h2 id="yh">다음 빈자리 · 아르피아 테니스장</h2><div class="chips" id="yChips" role="group" aria-label="요일 필터"></div><div id="yErr"></div><div id="yNext"></div></section>
   <section aria-labelledby="yh2"><h2 id="yh2">날짜별 시간표</h2><div id="yDays" style="display:flex;flex-direction:column;gap:10px"></div></section>
-  <div class="ycard"><p class="note"><span class="u">오늘부터 2주(평일 포함)를 보여 줍니다.</span> <span class="u">15분마다 4일씩 돌아가며 갱신해 날짜별로 약 1시간 안에 한 바퀴 돕니다.</span> <span class="u">날짜 옆에 마지막 확인 시각이 있습니다.</span> <span class="u">그사이 예약될 수 있으니 예약 전에 공식 사이트에서 확인하세요.</span></p>
+  <div class="ycard"><p class="note"><span class="u">평일은 오늘부터 2주, 주말·공휴일은 다음 달 말일까지 보여 줍니다.</span> <span class="u">15분마다 4일씩 돌아가며 갱신해 주말·공휴일은 약 1시간, 평일은 약 2시간 안에 한 바퀴 돕니다.</span> <span class="u">날짜 옆에 마지막 확인 시각이 있습니다.</span> <span class="u">그사이 예약될 수 있으니 예약 전에 공식 사이트에서 확인하세요.</span></p>
   <a class="go" id="yGo" href="https://publicsports.yongin.go.kr/publicsports/sports/selectFcltyRceptResveListU.do" target="_blank" rel="noopener">공식 예약 사이트에서 예약하기 <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M5 3l5 5-5 5" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
   <p class="note"><span class="u">출처: 용인특례시 공공체육시설 통합예약(비로그인 공개 화면 기준).</span></p></div>
 </main></div>
@@ -247,7 +247,8 @@ footer{font-size:12px;color:var(--sub);line-height:1.6}
     var now=new Date(),courts=yd.courts||[],weekend=yd.weekend||[],chk=yd.checked||{},nOpen=0,nxt=[];
     var days=Object.keys(yd.days||{}).sort().filter(function(day){var we=weekend.indexOf(day)>=0;return !yKind||(yKind==='we')===we});
     var upd=parse(yd.updated_at);yongUpd=upd?mdt(upd)+' 갱신':'아직 갱신 없음';
-    $('yErr').innerHTML=yd.fetch_ok===false?'<div class="err">갱신 실패 — 아래는 '+(upd?mdt(upd)+' ':'')+'마지막으로 받은 데이터입니다. 지금과 다를 수 있습니다.</div>':'';
+    var mm=(yd.missing_months||[]).map(function(m){return '<div class="notice" style="margin-bottom:8px">'+(+m.slice(5))+'월 예약 아직 안 열림 — 열리면 자동으로 표시됩니다.</div>'}).join('');
+    $('yErr').innerHTML=mm+(yd.fetch_ok===false?'<div class="err">갱신 실패 — 아래는 '+(upd?mdt(upd)+' ':'')+'마지막으로 받은 데이터입니다. 지금과 다를 수 있습니다.</div>':'');
     $('yChips').innerHTML=[['','전체'],['wd','평일'],['we','주말·공휴일']].map(function(it){return'<button type="button" class="chip" data-v="'+it[0]+'" aria-pressed="'+(yKind===it[0])+'">'+it[1]+'</button>'}).join('');
     $('yChips').onclick=function(e){var b=e.target.closest('.chip');if(!b)return;yKind=b.getAttribute('data-v');yrender()};
     var dh='';
@@ -275,7 +276,7 @@ footer{font-size:12px;color:var(--sub);line-height:1.6}
     tab=t;var y=t==='yongin';
     $('tabSeoul').setAttribute('aria-selected',!y);$('tabYongin').setAttribute('aria-selected',y);
     $('sWrap').style.display=y?'none':'';$('yWrap').style.display=y?'flex':'none';
-    $('h1').innerHTML=y?'용인 아르피아 테니스장<br> 2주 빈자리':'서울 공공 테니스장<br> 지금 접수되는 곳';
+    $('h1').innerHTML=y?'용인 아르피아 테니스장<br> 빈자리 현황':'서울 공공 테니스장<br> 지금 접수되는 곳';
     $('lOpen').textContent=y?'빈 시간대':'접수중';$('lSoon').textContent=y?'확인한 날':'오픈 예정';$('lClosed').textContent=y?'코트':'마감';
     if(y){yrender();if(!yd)$('updated').textContent=''}else{$('updated').textContent=seoulUpd;if(courts.length)render()}
     try{history.replaceState(null,'',y?'#yongin':location.pathname+location.search)}catch(e){}
