@@ -4,11 +4,14 @@
 - 공식 사이트가 로그인 없이 화면에서 쓰는 AJAX 1종만 호출한다(다른 경로 추측 호출 없음, 로그인·쿠키·계정 없음):
   POST https://publicsports.yongin.go.kr/publicsports/sports/selectRegistTimeByChosenDateFcltyRceptResveApply.do
   form: dateVal=YYYYMMDD&resveId=<코트 월별 ID>   → JSON(fcltRceptRsvctmTime[] 등)
-- 범위: 오늘부터 14일 중 토·일·공휴일 × 4면. 실행당 상한 MAX_REQ 건, 요청 사이 GAP 초.
+- 범위: 오늘부터 14일 전체 × 4면(56건)을 한 번에 받지 않고, 실행(매시)마다 4일씩(=16건) 가장 오래 확인 안 한 날부터 돌아가며 받는다.
+  주말·공휴일은 오래됨 점수를 2배로 쳐서 조금 더 자주 받는다. 요청 사이 GAP 초, 실행당 상한 MAX_REQ 건.
 - 응답에서 시간대(useTm)·상태(rsvctmStts)만 저장한다. 예약자 관련 필드(frstRegisterNmApply 등)는 읽지도 저장하지도 않는다.
 - 차단·오류 징후(HTTP 오류·리다이렉트·JSON 아님·필수 키 없음·빈 응답)가 한 번이라도 나오면 즉시 중단하고
   이전 yongin.json 내용을 그대로 두고 fetch_ok=false 만 표시한다. 재시도·우회 없음.
-- 직전 성공 후 MIN_HOURS 시간이 안 지났으면 호출하지 않고 이전 데이터를 유지한다(--force 로 무시).
+- 주기: 워크플로 cron 은 15분마다. 직전 시도 후 MIN_MIN 분이 안 지났으면 호출하지 않는다(--force 로 무시).
+- 백오프: 차단·오류 징후가 한 번이라도 나오면 backoff.active=true 로 저장 → 다음 실행부터 BACKOFF_MIN(30분) 간격.
+  물러난 뒤 연속 BACKOFF_CLEAR 회 성공하면 평소 간격으로 복귀.
 """
 import json, sys, time, urllib.request, urllib.parse
 from datetime import datetime, timezone, timedelta, date
@@ -20,8 +23,11 @@ URL = "https://publicsports.yongin.go.kr/publicsports/sports/selectRegistTimeByC
 OFFICIAL = "https://publicsports.yongin.go.kr/publicsports/sports/selectFcltyRceptResveListU.do"
 KST = timezone(timedelta(hours=9))
 GAP = 5            # 요청 사이 초
-MAX_REQ = 24       # 실행당 상한
-MIN_HOURS = 2.75   # 3시간 주기(워크플로는 매시 돌므로 그 사이 실행은 건너뜀)
+MAX_REQ = 16       # 실행당 상한(차단 한도 약 25~30건보다 낮게)
+DAYS_PER_RUN = 4   # 실행당 날짜 수(4일 × 4면 = 16건)
+MIN_MIN = 12       # 평소: 15분 cron 사이 지연·겹친 실행 흡수(직전 시도 후 12분 안이면 건너뜀)
+BACKOFF_MIN = 28   # 차단 징후 뒤: 30분 간격(15분 cron 한 번 걸러 실행)
+BACKOFF_CLEAR = 3  # 물러난 뒤 연속 성공 3회면 평소 간격으로 복귀
 DAYS = 14
 
 # 코트 → 월별 resveId (공식 사이트 코트 ID는 월마다 다름. ytcc.info/courts.json 을 참고용으로만 읽어 옮김, 2026-11-23)
@@ -59,20 +65,31 @@ def load_prev():
     return None
 
 
-def plan(today):
-    days = []
-    for i in range(DAYS):
-        d = today + timedelta(days=i)
-        if d.weekday() >= 5 or d.isoformat() in HOLIDAYS:
-            days.append(d)
-    reqs, missing = [], set()
-    for d in days:
+def is_weekend(d):
+    return d.weekday() >= 5 or d.isoformat() in HOLIDAYS
+
+
+def plan(today, checked, now):
+    """오늘부터 DAYS일 중 가장 오래 확인 안 한 DAYS_PER_RUN 일(주말·공휴일은 2배 가중) × 코트."""
+    window = [today + timedelta(days=i) for i in range(DAYS)]
+    def score(d):
+        c = checked.get(d.isoformat())
+        age = float("inf") if not c else (now - datetime.fromisoformat(c)).total_seconds() / 3600
+        return (age * (2 if is_weekend(d) else 1), -d.toordinal())   # 동점이면 가까운 날 먼저
+    missing, usable = set(), []
+    for d in window:
+        if all(c["ids"].get(d.strftime("%Y-%m")) is None for c in COURTS):
+            missing.add(d.strftime("%Y-%m")); continue
+        usable.append(d)
+    picked = sorted(sorted(usable, key=score, reverse=True)[:DAYS_PER_RUN])
+    reqs = []
+    for d in picked:
         for c in COURTS:
             rid = c["ids"].get(d.strftime("%Y-%m"))
             if rid is None:
                 missing.add(d.strftime("%Y-%m")); continue
             reqs.append((d, c, rid))
-    return days, reqs[:MAX_REQ], sorted(missing), len(reqs) > MAX_REQ
+    return window, picked, reqs[:MAX_REQ], sorted(missing), len(reqs) > MAX_REQ
 
 
 def call(d, rid):
@@ -135,13 +152,19 @@ def main():
     force = "--force" in sys.argv
     prev = load_prev()
     t = now_kst()
-    if prev and prev.get("updated_at") and not force:
-        age = (t - datetime.fromisoformat(prev["updated_at"])).total_seconds() / 3600
-        if prev.get("fetch_ok") and age < MIN_HOURS:
-            print(f"건너뜀: 직전 갱신 {age:.1f}시간 전(<{MIN_HOURS}h). 요청 0건")
+    bo = dict((prev or {}).get("backoff") or {})
+    if prev and prev.get("last_attempt_at") and not force:
+        age_min = (t - datetime.fromisoformat(prev["last_attempt_at"])).total_seconds() / 60
+        need = BACKOFF_MIN if bo.get("active") else MIN_MIN
+        if age_min < need:
+            print(f"건너뜀: 직전 시도 {age_min:.0f}분 전(<{need}분{', 백오프 중' if bo.get('active') else ''}). 요청 0건")
             return 0
-    days, reqs, missing, truncated = plan(t.date())
-    print(f"계획: 날짜 {len(days)}일 → 요청 {len(reqs)}건(상한 {MAX_REQ}), ID 없는 달 {missing}, 잘림 {truncated}")
+    checked_prev = dict((prev or {}).get("checked") or {})
+    if prev and prev.get("updated_at"):   # 날짜별 시각이 없던 옛 형식 데이터는 전체 갱신 시각으로 대신함
+        for dd in (prev.get("days") or {}):
+            checked_prev.setdefault(dd, prev["updated_at"])
+    window, picked, reqs, missing, truncated = plan(t.date(), checked_prev, t)
+    print(f"계획: 이번 날짜 {[d.isoformat() for d in picked]} → 요청 {len(reqs)}건(상한 {MAX_REQ}), ID 없는 달 {missing}, 잘림 {truncated}")
     result, stts_seen, n = {}, set(), 0
     try:
         for d, c, rid in reqs:
@@ -155,17 +178,30 @@ def main():
     except Abort as e:
         print(f"중단({n}번째 요청): {e} → 이전 데이터 유지", file=sys.stderr)
         base = prev or {"updated_at": None, "courts": [{"key": c["key"], "name": c["name"]} for c in COURTS], "days": {}}
-        base.update({"fetch_ok": False, "last_error": str(e)[:200], "last_attempt_at": t.isoformat(timespec="seconds"),
+        base.update({"backoff": {"active": True, "since": bo.get("since") or t.isoformat(timespec="seconds"), "ok_streak": 0},
+                     "fetch_ok": False, "last_error": str(e)[:200], "last_attempt_at": t.isoformat(timespec="seconds"),
                      "last_request_count": n})
         save(base)
         return 0   # 배포는 계속(서울 데이터·이전 용인 데이터 유지)
+    done = now_kst().isoformat(timespec="seconds")
+    keep = {d.isoformat() for d in window}
+    days_all = {d: v for d, v in ((prev or {}).get("days") or {}).items() if d in keep}   # 이번에 안 받은 날은 이전 값 유지
+    days_all.update(result)
+    checked = {d: c for d, c in checked_prev.items() if d in keep}
+    checked.update({d: done for d in result})
+    if bo.get("active"):
+        streak = int(bo.get("ok_streak", 0)) + 1
+        bo = {"active": False} if streak >= BACKOFF_CLEAR else {"active": True, "since": bo.get("since"), "ok_streak": streak}
     save({
-        "updated_at": now_kst().isoformat(timespec="seconds"), "fetch_ok": True, "last_error": "",
+        "backoff": bo,
+        "updated_at": done, "fetch_ok": True, "last_error": "",
         "last_attempt_at": t.isoformat(timespec="seconds"), "last_request_count": n,
         "facility": "아르피아 테니스장", "official_url": OFFICIAL,
         "courts": [{"key": c["key"], "name": c["name"]} for c in COURTS],
         "missing_months": missing, "truncated": truncated,
-        "stts_seen": sorted(stts_seen), "days": result,
+        "stts_seen": sorted(set((prev or {}).get("stts_seen") or []) | stts_seen),
+        "weekend": sorted(d for d in days_all if is_weekend(date.fromisoformat(d))),
+        "checked": checked, "days": dict(sorted(days_all.items())),
     })
     print(f"저장: {OUT} (요청 {n}건, 상태값 {sorted(stts_seen)})")
     return 0

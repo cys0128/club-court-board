@@ -121,6 +121,14 @@ footer{font-size:12px;color:var(--sub);line-height:1.6}
 .cell.o{background:#CFE8D9;color:var(--court-d)}
 .cell.c{background:var(--closedbg);color:var(--sub)}
 .dh{font-size:14px;font-weight:700;color:var(--sub2)}
+.dday>summary{min-height:44px;display:flex;align-items:center;justify-content:space-between;gap:8px;cursor:pointer;list-style:none;flex-wrap:wrap}
+.dday>summary::-webkit-details-marker{display:none}
+.dday>summary:focus-visible{outline:3px solid #2F7FD8;outline-offset:2px}
+.dday .sm{font-size:12px;color:var(--sub)}
+.dday .ag{font-style:normal;font-size:11px;color:var(--sub)}
+.dday .go-n{color:var(--court);font-weight:700}
+.wk{font-style:normal;font-size:11px;font-weight:600;color:var(--sub2);border:1px solid var(--line);border-radius:6px;padding:1px 6px;margin-left:6px}
+.dday{background:var(--card);border-radius:14px;padding:4px 12px 12px}
 .err{background:#F6E3DC;color:#7A2E17;border-radius:10px;padding:10px 12px;font-size:13px}
 </style>
 </head>
@@ -160,9 +168,9 @@ footer{font-size:12px;color:var(--sub);line-height:1.6}
 </div>
 
 <div class="wrap" id="yWrap"><main>
-  <section aria-labelledby="yh"><h2 id="yh">다음 빈자리 · 아르피아 테니스장</h2><div id="yErr"></div><div id="yNext"></div></section>
-  <section aria-labelledby="yh2"><h2 id="yh2">날짜별 시간표</h2><div id="yDays" style="display:flex;flex-direction:column;gap:16px"></div></section>
-  <div class="ycard"><p class="note"><span class="u">3시간마다 갱신합니다.</span> <span class="u">갱신 사이에 예약될 수 있으니 예약 전에 공식 사이트에서 확인하세요.</span> <span class="u">오늘부터 2주 중 토·일·공휴일만 보여 줍니다.</span></p>
+  <section aria-labelledby="yh"><h2 id="yh">다음 빈자리 · 아르피아 테니스장</h2><div class="chips" id="yChips" role="group" aria-label="요일 필터"></div><div id="yErr"></div><div id="yNext"></div></section>
+  <section aria-labelledby="yh2"><h2 id="yh2">날짜별 시간표</h2><div id="yDays" style="display:flex;flex-direction:column;gap:10px"></div></section>
+  <div class="ycard"><p class="note"><span class="u">오늘부터 2주(평일 포함)를 보여 줍니다.</span> <span class="u">15분마다 4일씩 돌아가며 갱신해 날짜별로 약 1시간 안에 한 바퀴 돕니다.</span> <span class="u">날짜 옆에 마지막 확인 시각이 있습니다.</span> <span class="u">그사이 예약될 수 있으니 예약 전에 공식 사이트에서 확인하세요.</span></p>
   <a class="go" id="yGo" href="https://publicsports.yongin.go.kr/publicsports/sports/selectFcltyRceptResveListU.do" target="_blank" rel="noopener">공식 예약 사이트에서 예약하기 <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M5 3l5 5-5 5" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
   <p class="note"><span class="u">출처: 용인특례시 공공체육시설 통합예약(비로그인 공개 화면 기준).</span></p></div>
 </main></div>
@@ -232,37 +240,42 @@ footer{font-size:12px;color:var(--sub);line-height:1.6}
   var seoulUpd='',yongUpd='',yd=null,tab='seoul';
   var DOW=['일','월','화','수','목','금','토'];
   function dlabel(s){var a=s.split('-'),d=new Date(+a[0],a[1]-1,+a[2]);return a[1]+'.'+a[2]+'('+DOW[d.getDay()]+')'}
+  var yKind='';   // '' 전체 | 'wd' 평일 | 'we' 주말·공휴일
+  function ago(iso){var d=parse(iso);if(!d)return'';var h=Math.floor((new Date()-d)/36e5);return h<1?'방금 확인':h+'시간 전 확인'}
   function yrender(){
     if(!yd){return}
-    var now=new Date(),courts=yd.courts||[],days=Object.keys(yd.days||{}).sort(),nOpen=0,nxt=[];
+    var now=new Date(),courts=yd.courts||[],weekend=yd.weekend||[],chk=yd.checked||{},nOpen=0,nxt=[];
+    var days=Object.keys(yd.days||{}).sort().filter(function(day){var we=weekend.indexOf(day)>=0;return !yKind||(yKind==='we')===we});
     var upd=parse(yd.updated_at);yongUpd=upd?mdt(upd)+' 갱신':'아직 갱신 없음';
-    var err=$('yErr');
-    err.innerHTML=yd.fetch_ok===false?'<div class="err">갱신 실패 — 아래는 '+(upd?mdt(upd)+' ':'')+'마지막으로 받은 데이터입니다. 지금과 다를 수 있습니다.</div>':'';
+    $('yErr').innerHTML=yd.fetch_ok===false?'<div class="err">갱신 실패 — 아래는 '+(upd?mdt(upd)+' ':'')+'마지막으로 받은 데이터입니다. 지금과 다를 수 있습니다.</div>':'';
+    $('yChips').innerHTML=[['','전체'],['wd','평일'],['we','주말·공휴일']].map(function(it){return'<button type="button" class="chip" data-v="'+it[0]+'" aria-pressed="'+(yKind===it[0])+'">'+it[1]+'</button>'}).join('');
+    $('yChips').onclick=function(e){var b=e.target.closest('.chip');if(!b)return;yKind=b.getAttribute('data-v');yrender()};
     var dh='';
     days.forEach(function(day){
-      var cs=yd.days[day],times={},byT={};
+      var cs=yd.days[day],times={},byT={},dOpen=0;
       courts.forEach(function(c){(cs[c.key]||[]).forEach(function(s){times[s.s]=s.e;
         var past=new Date(day+'T'+s.s+':00')<now;
-        if(s.open&&!past){nOpen++;(byT[s.s]=byT[s.s]||{e:s.e,c:[]}).c.push(c.name)}})});
+        if(s.open&&!past){dOpen++;nOpen++;(byT[s.s]=byT[s.s]||{e:s.e,c:[]}).c.push(c.name)}})});
       Object.keys(byT).sort().forEach(function(k){nxt.push({day:day,s:k,e:byT[k].e,c:byT[k].c})});
       var ts=Object.keys(times).sort();
-      dh+='<div><div class="dh">'+dlabel(day)+'</div><div class="tablebox" style="margin-top:8px"><table class="ytab"><thead><tr><th scope="col">코트</th>'
+      dh+='<details class="dday"'+(dOpen?' open':'')+'><summary><span class="dh">'+dlabel(day)+(weekend.indexOf(day)>=0?' <i class="wk">주말·공휴일</i>':'')+'</span><span class="sm"><em class="ag">'+esc(ago(chk[day]))+'</em> '+(dOpen?'<b class="go-n">빈 시간대 '+dOpen+'</b>':'전부 마감')+'</span></summary>'
+        +'<div class="tablebox" style="margin-top:8px"><table class="ytab"><thead><tr><th scope="col">코트</th>'
         +ts.map(function(k){return'<th scope="col">'+k+'</th>'}).join('')+'</tr></thead><tbody>'
         +courts.map(function(c){var m={};(cs[c.key]||[]).forEach(function(s){m[s.s]=s});
           return'<tr><th scope="row" style="font-weight:600;color:#3F4541;text-align:left">'+esc(c.name)+'</th>'+ts.map(function(k){var s=m[k];
             return'<td>'+(s?'<span class="cell '+(s.open?'o':'c')+'">'+(s.open?'빈자리':'마감')+'</span>':'<span class="cell" style="color:#9AA09B">–</span>')+'</td>'}).join('')+'</tr>'}).join('')
-        +'</tbody></table></div></div>'});
+        +'</tbody></table></div></details>'});
     $('yDays').innerHTML=dh||'<p class="empty">표시할 날짜가 없습니다.</p>';
     nxt.sort(function(a,b){return a.day<b.day?-1:a.day>b.day?1:a.s<b.s?-1:1});
-    $('yNext').innerHTML=nxt.length?'<ul class="nxlist">'+nxt.slice(0,8).map(function(n){return'<li class="nx"><b>'+dlabel(n.day)+' '+n.s+'–'+n.e+'</b><span>'+esc(n.c.join(' · '))+'</span></li>'}).join('')+'</ul>'
-      :'<div class="dash">지금 확인된 주말·공휴일 빈자리가 없습니다. 취소분이 나오면 3시간 안에 여기 맨 위에 뜹니다.</div>';
+    $('yNext').innerHTML=nxt.length?'<ul class="nxlist">'+nxt.slice(0,10).map(function(n){return'<li class="nx"><b>'+dlabel(n.day)+' '+n.s+'–'+n.e+'</b><span>'+esc(n.c.join(' · '))+'</span></li>'}).join('')+'</ul>'+(nxt.length>10?'<p class="note" style="margin-top:8px">가까운 10개만 보여 줍니다. 전체 '+nxt.length+'개는 아래 시간표에서 확인하세요.</p>':'')
+      :'<div class="dash">지금 확인된 '+(yKind==='wd'?'평일':yKind==='we'?'주말·공휴일':'')+' 빈자리가 없습니다. 취소분이 나오면 15분 안팎으로 여기 맨 위에 뜹니다.</div>';
     if(tab==='yongin'){$('nOpen').textContent=nOpen;$('nSoon').textContent=days.length;$('nClosed').textContent=courts.length;$('updated').textContent=yongUpd}
   }
   function setTab(t){
     tab=t;var y=t==='yongin';
     $('tabSeoul').setAttribute('aria-selected',!y);$('tabYongin').setAttribute('aria-selected',y);
     $('sWrap').style.display=y?'none':'';$('yWrap').style.display=y?'flex':'none';
-    $('h1').innerHTML=y?'용인 아르피아 테니스장<br> 주말 빈자리':'서울 공공 테니스장<br> 지금 접수되는 곳';
+    $('h1').innerHTML=y?'용인 아르피아 테니스장<br> 2주 빈자리':'서울 공공 테니스장<br> 지금 접수되는 곳';
     $('lOpen').textContent=y?'빈 시간대':'접수중';$('lSoon').textContent=y?'확인한 날':'오픈 예정';$('lClosed').textContent=y?'코트':'마감';
     if(y){yrender();if(!yd)$('updated').textContent=''}else{$('updated').textContent=seoulUpd;if(courts.length)render()}
     try{history.replaceState(null,'',y?'#yongin':location.pathname+location.search)}catch(e){}

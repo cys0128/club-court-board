@@ -1,7 +1,7 @@
 name: pages
 on:
   schedule:
-    - cron: "0 * * * *"
+    - cron: "*/15 * * * *"   # 용인 15분마다, 서울은 이 중 매시 정각(분<15) 실행에서만
   workflow_dispatch:
   push:
     branches: [master]
@@ -23,16 +23,26 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+      - name: 서울 수집 시점 판정 (매시 정각 실행·수동·push 만 서울 수집)
+        id: seoul
+        run: |
+          m=$(date -u +%M)
+          if [ "${{ github.event_name }}" != "schedule" ] || [ "$m" -lt 15 ]; then echo "run=true" >> "$GITHUB_OUTPUT"; else echo "run=false" >> "$GITHUB_OUTPUT"; fi
       - name: fetch courts (키 없으면 sample)
+        if: steps.seoul.outputs.run == 'true'
         env:
           SEOUL_API_KEY: ${{ secrets.SEOUL_API_KEY }}
         run: python fetch_courts.py
+      - name: 서울 수집을 건너뛴 실행은 배포된 이전 courts.json 유지 (저장소의 sample 로 덮이지 않게)
+        if: steps.seoul.outputs.run != 'true'
+        run: |
+          curl -fsS -m 30 https://yschoi128.github.io/club-court-board/data/courts.json -o /tmp/courts_prev.json             && python -c "import json;json.load(open('/tmp/courts_prev.json',encoding='utf-8'))"             && cp /tmp/courts_prev.json data/courts.json || echo "이전 courts.json 못 받음 → 저장소 파일 사용"
       - name: 용인 이전 데이터 내려받기 (실패 시 이전 값 유지용, 우리 사이트 파일)
         run: |
           mkdir -p data
           curl -fsS -m 30 https://yschoi128.github.io/club-court-board/data/yongin.json -o data/yongin.json || rm -f data/yongin.json
           python -c "import json;json.load(open('data/yongin.json',encoding='utf-8'))" 2>/dev/null || rm -f data/yongin.json
-      - name: fetch yongin (아르피아, 3시간마다·실행당 최대 24건·건 사이 5초, 실패해도 배포는 계속)
+      - name: fetch yongin (아르피아, 15분마다·실행당 16건·건 사이 5초, 오류 시 중단·백오프, 배포는 계속)
         run: python fetch_yongin.py
       - name: build site (courts.json 은 커밋하지 않고 산출물로만)
         run: |
