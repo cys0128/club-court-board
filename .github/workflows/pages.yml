@@ -54,5 +54,7 @@ jobs:
       - uses: actions/upload-pages-artifact@v3
         with:
           path: _site
+      - name: 아티팩트 목록 반영 대기 (deploy-pages 가 'artifact 0개'로 실패하는 지연 회피)
+        run: sleep 20
       - id: deployment
         uses: actions/deploy-pages@v4
