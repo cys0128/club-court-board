@@ -108,6 +108,18 @@ footer{font-size:12px;color:var(--sub);line-height:1.6}
 .tab[aria-selected=true]{background:var(--ball);border-color:var(--ball);color:#1B1F1C}
 .tab:focus-visible,.ol:focus-visible{outline:3px solid #fff;outline-offset:2px}
 #yWrap{display:none}
+.fav{width:44px;height:44px;flex-shrink:0;border-radius:50%;border:1px solid var(--line);background:#fff;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;padding:0}
+.fav:hover{background:#FFF6D6}
+.fav[aria-pressed=true]{border-color:#D9A400;background:#FFF6D6}
+.fav:focus-visible{outline:3px solid #2F7FD8;outline-offset:2px}
+.r1r{display:flex;align-items:center;gap:8px;flex-shrink:0}
+.crr{display:flex;align-items:center;gap:10px;flex-shrink:0}
+.favlist{display:flex;flex-direction:column;gap:0}
+.favlist .crow{margin-top:10px}
+.sr{position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden}
+#favHint{margin:0 0 -8px}
+@media (max-width:899px){#guChips{flex-wrap:nowrap;overflow-x:auto;padding-bottom:4px}#guChips .chip{flex-shrink:0}}
+td.fvc,th.fvc{width:56px;padding-right:0}
 #list.stale{opacity:.55}
 .dday.stale>*:not(summary),.dday.stale .dh{opacity:.55}
 .dday.stale summary .st{font-style:normal;font-size:11px;color:var(--sub)}
@@ -204,6 +216,7 @@ a.cell:focus-visible{outline:3px solid #2F7FD8;outline-offset:1px}
 <div class="wrap" id="sWrap">
   <aside class="panel" aria-label="필터">
     <div class="pbox">
+      <div class="grow"><div class="flabel">보기</div><div class="chips" id="favChips"></div></div>
       <label class="search"><span class="flabel">코트 찾기</span><input type="search" id="q" placeholder="공원·코트 이름" autocomplete="off"></label>
       <div class="grow"><div class="flabel">구</div><div class="chips" id="guChips"></div></div>
       <div class="dayrow" id="dayBox"><div class="flabel">요일</div><div class="chips" id="dayChips"></div></div>
@@ -214,6 +227,7 @@ a.cell:focus-visible{outline:3px solid #2F7FD8;outline-offset:1px}
   </aside>
 
   <main>
+    <p class="note" id="favHint" hidden>자주 가는 코트에 별을 눌러 두면 위에 모아 보여요</p>
     <ul class="sx" id="sWx" aria-label="서울 7일 날씨"></ul>
     <div id="list"></div>
     <footer><span class="u">출처: 서울 열린데이터광장 ‘서울시 체육시설 공공서비스예약 정보’.</span> <span class="u">서울시 공공서비스예약 목록 기준입니다.</span></footer>
@@ -237,7 +251,17 @@ a.cell:focus-visible{outline:3px solid #2F7FD8;outline-offset:1px}
   var PAGES='https://yschoi128.github.io/club-court-board/';
   var DATA=new URLSearchParams(location.search).get('data');   // 시험용 파일 지정(없으면 /api/seoul)
   var seoulStale=false;
-  var courts=[],S={gu:'',day:'',only:false,q:''};
+  var courts=[],S={gu:'',day:'',only:false,q:'',fav:false},favInit=false;
+  /* 즐겨찾기: 이 기기(localStorage)에만 저장. 키 = 장소명+코트명(평일/주말·연도 표기 제외)이라 같은 코트의 평일·주말 서비스가 함께 묶인다 */
+  var FAVS={};try{FAVS=JSON.parse(localStorage.getItem('fav1')||'{}')||{}}catch(e){FAVS={}}
+  function favSave(){try{localStorage.setItem('fav1',JSON.stringify(FAVS))}catch(e){}}
+  function favN(){return Object.keys(FAVS).length}
+  var WTOK='(?:평일|주말|공휴일|휴일|토|일)';
+  function favKey(c){var n=(c.SVCNM||'').replace(new RegExp('\\(\\s*'+WTOK+'(?:\\s*[\\/,·]\\s*'+WTOK+')*\\s*\\)','g'),'').replace(/-?\s*\d{4}년\s*/g,'').replace(/[\s\-_·]+/g,'').toLowerCase();
+    return (c.PLACENM||'').replace(/\s+/g,'')+'|'+n}
+  function favBtn(c){var k=favKey(c),on=!!FAVS[k],nm=title(c);
+    return'<button type="button" class="fav" data-k="'+encodeURIComponent(k)+'" aria-pressed="'+on+'" aria-label="'+esc((on?'즐겨찾기 해제: ':'즐겨찾기 추가: ')+place(c)+' '+nm)+'">'
+      +'<svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.2l2.7 5.6 6.1.8-4.5 4.3 1.1 6.1L12 17.1 6.6 20l1.1-6.1L3.2 9.6l6.1-.8z" fill="'+(on?'#E0A800':'none')+'" stroke="'+(on?'#B88A00':'#7A817C')+'" stroke-width="1.7" stroke-linejoin="round"/></svg></button>'}
   function parse(s){if(!s)return null;var m=s.match(/(\d+)-(\d+)-(\d+)[ T](\d+):(\d+)/);return m?new Date(+m[1],m[2]-1,+m[3],+m[4],+m[5]):null}
   function p2(n){return ('0'+n).slice(-2)}
   function md(d){return d?p2(d.getMonth()+1)+'.'+p2(d.getDate()):'-'}
@@ -256,12 +280,16 @@ a.cell:focus-visible{outline:3px solid #2F7FD8;outline-offset:1px}
   function card(c){var st=c._st,url=safeUrl(c.SVCURL);
     var second=st==='soon'?['접수 시작',mdt(c._b)]:['접수 마감',mdt(c._e)];
     return '<article class="card '+st+'"><div class="r1"><div><div class="place">'+esc(place(c))+'</div><h3>'+esc(title(c))+'</h3></div>'
-     +'<span class="badge">'+(st==='soon'?'오픈 예정':'접수중')+'</span></div>'
+     +'<div class="r1r"><span class="badge">'+(st==='soon'?'오픈 예정':'접수중')+'</span>'+favBtn(c)+'</div></div>'
      +'<div class="facts"><div class="fact"><span>이용 시간</span><b>'+esc(range(c))+'</b></div><div class="fact"><span>'+second[0]+'</span><b>'+second[1]+'</b></div></div>'
      +'<div class="tags">'+tags(c)+'</div>'
      +(url?'<a class="go" href="'+esc(url)+'" target="_blank" rel="noopener">예약하러 가기 <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M5 3l5 5-5 5" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></a>':'')+'</article>'}
   function chips(el,items,key){el.innerHTML=items.map(function(it){return'<button type="button" class="chip" data-v="'+esc(it[0])+'" aria-pressed="'+(S[key]===it[0])+'">'+esc(it[1])+'</button>'}).join('');
     el.onclick=function(e){var b=e.target.closest('.chip');if(!b)return;S[key]=b.getAttribute('data-v');chips(el,items,key);render()}}
+  function favChips(){var n=favN(),el=$('favChips');
+    el.innerHTML=[[false,'전체'],[true,'즐겨찾기'+(n?' ('+n+')':'')]].map(function(it){return'<button type="button" class="chip" data-v="'+it[0]+'" aria-pressed="'+(S.fav===it[0])+'">'+it[1]+'</button>'}).join('');
+    el.onclick=function(e){var b=e.target.closest('.chip');if(!b)return;S.fav=b.getAttribute('data-v')==='true';render()}}
+  function closedRow(c){return'<div class="crow"><div class="n"><b>'+esc(title(c))+'</b><span>'+esc(place(c))+'</span></div><span class="crr"><em>마감</em>'+favBtn(c)+'</span></div>'}
   function render(){
     var q=S.q.trim().toLowerCase();
     var list=courts.filter(function(c){
@@ -269,18 +297,29 @@ a.cell:focus-visible{outline:3px solid #2F7FD8;outline-offset:1px}
       if(S.day&&daytype(c.SVCNM)!==S.day)return false;
       if(q&&((c.SVCNM||'')+' '+(c.PLACENM||'')).toLowerCase().indexOf(q)<0)return false;
       return true});
-    var soon=list.filter(function(c){return c._st==='soon'}).sort(function(a,b){return a._b-b._b});
-    var open=list.filter(function(c){return c._st==='open'}).sort(function(a,b){return (a._e-b._e)||0});
-    var closed=list.filter(function(c){return c._st==='closed'});
+    if(S.fav&&!favN())S.fav=false;
+    var favs=list.filter(function(c){return FAVS[favKey(c)]}),base=S.fav?[]:list.filter(function(c){return !FAVS[favKey(c)]});
+    var soon=base.filter(function(c){return c._st==='soon'}).sort(function(a,b){return a._b-b._b});
+    var open=base.filter(function(c){return c._st==='open'}).sort(function(a,b){return (a._e-b._e)||0});
+    var closed=base.filter(function(c){return c._st==='closed'});
     if(tab==='seoul')['open','soon','closed'].forEach(function(s){$('n'+s.charAt(0).toUpperCase()+s.slice(1)).textContent=courts.filter(function(c){return c._st===s}).length});
-    var h='<section><h2>오픈 예정'+(soon.length?' '+soon.length+'곳':'')+'</h2>'+(soon.length?'<div class="grid">'+soon.map(card).join('')+'</div>':'<div class="dash">새로 열릴 접수가 생기면 여기 맨 위에 시각과 함께 뜹니다.</div>')+'</section>';
+    favChips();$('favHint').hidden=favN()>0;
+    var h='';
+    if(favs.length||S.fav){
+      var fo=favs.filter(function(c){return c._st!=='closed'}).sort(function(a,b){return a._st===b._st?((a._e-b._e)||0):(a._st==='open'?-1:1)}),fc=favs.filter(function(c){return c._st==='closed'});
+      h+='<section><h2>즐겨찾기 '+favs.length+'곳</h2>'+(fo.length?'<div class="grid">'+fo.map(card).join('')+'</div>':'')+(fc.length?'<div class="favlist">'+fc.map(closedRow).join('')+'</div>':'')+(favs.length?'':'<p class="empty">조건에 맞는 즐겨찾기 코트가 없습니다.</p>')+'</section>'}
+    if(!S.fav){
+    h+='<section><h2>오픈 예정'+(soon.length?' '+soon.length+'곳':'')+'</h2>'+(soon.length?'<div class="grid">'+soon.map(card).join('')+'</div>':'<div class="dash">새로 열릴 접수가 생기면 여기 맨 위에 시각과 함께 뜹니다.</div>')+'</section>';
     h+='<section><h2>접수중 '+open.length+'곳</h2>'+(open.length?'<div class="grid">'+open.map(card).join('')+'</div>':'<p class="empty">조건에 맞는 접수중 코트가 없습니다.</p>')+'</section>';
     if(!S.only&&closed.length){
-      h+='<section><details class="closed"><summary>마감 '+closed.length+'곳</summary>'+closed.map(function(c){return'<div class="crow"><div class="n"><b>'+esc(title(c))+'</b><span>'+esc(place(c))+'</span></div><em>마감</em></div>'}).join('')+'</details>'
-       +'<div class="pc-only"><h2>마감 '+closed.length+'곳</h2><div class="tablebox"><table><thead><tr><th>구 · 장소</th><th>코트</th><th>이용 시간</th><th>접수 마감</th><th>상태</th></tr></thead><tbody>'
-       +closed.map(function(c){return'<tr><td>'+esc(place(c))+'</td><td>'+esc(title(c))+'</td><td>'+esc(range(c))+'</td><td>'+mdt(c._e)+'</td><td>마감</td></tr>'}).join('')+'</tbody></table></div></div></section>'}
+      h+='<section><details class="closed"><summary>마감 '+closed.length+'곳</summary>'+closed.map(closedRow).join('')+'</details>'
+       +'<div class="pc-only"><h2>마감 '+closed.length+'곳</h2><div class="tablebox"><table><thead><tr><th class="fvc"><span class="sr">즐겨찾기</span></th><th>구 · 장소</th><th>코트</th><th>이용 시간</th><th>접수 마감</th><th>상태</th></tr></thead><tbody>'
+       +closed.map(function(c){return'<tr><td class="fvc">'+favBtn(c)+'</td><td>'+esc(place(c))+'</td><td>'+esc(title(c))+'</td><td>'+esc(range(c))+'</td><td>'+mdt(c._e)+'</td><td>마감</td></tr>'}).join('')+'</tbody></table></div></div></section>'}
+    }
     $('list').innerHTML=h;
   }
+  $('list').addEventListener('click',function(e){var b=e.target.closest('.fav');if(!b)return;var k=decodeURIComponent(b.getAttribute('data-k'));
+    if(FAVS[k])delete FAVS[k];else FAVS[k]=1;favSave();render()});
   function nocache(u){return u+(u.indexOf('?')<0?'?':'&')+'t='+Date.now()}
   function okJson(r){if(!r.ok)throw new Error(r.status);return r.json()}
   /* 서울: 열 때 /api/seoul(서울 열린데이터, 서버 1시간 캐시)에서 가져오고, 실패하면 GitHub Pages 의 마지막 courts.json 을 저장본(흐리게)으로 보여 준다 */
@@ -300,6 +339,7 @@ a.cell:focus-visible{outline:3px solid #2F7FD8;outline-offset:1px}
     chips($('dayChips'),[['','전체'],['평일','평일'],['주말·공휴일','주말·공휴일']],'day');
     $('q').oninput=function(){S.q=this.value;render()};
     $('onlyOpen').onchange=function(){S.only=this.checked;render()};
+    if(!favInit){favInit=true;S.fav=favN()>0}
     render();
   }).catch(function(e){if(!courts.length)$('list').innerHTML='<p class="empty">서울 데이터를 불러오지 못했습니다.</p>';throw e})}
   /* ---------- 날씨 (Open-Meteo, 키 없음·브라우저 직접 호출·30분 캐시, 실패하면 조용히 숨김) ---------- */
