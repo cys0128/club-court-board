@@ -146,6 +146,8 @@ footer{font-size:12px;color:var(--sub);line-height:1.6}
 .live{min-height:44px;display:inline-flex;align-items:center;gap:6px;padding:0 14px;border-radius:999px;border:1.5px solid var(--court);background:#fff;color:var(--court);font-size:13px;font-weight:700;cursor:pointer}
 .live:hover{background:var(--court);color:#fff}
 .live:disabled{opacity:.55;cursor:default}
+.live.hl{background:var(--court);color:#fff}
+.live.hl:hover{background:var(--court-d)}
 .live:focus-visible{outline:3px solid #2F7FD8;outline-offset:2px}
 .lv{font-style:normal;font-size:11px;font-weight:600;color:var(--court)}
 .lmsg{font-size:13px;color:var(--sub2);background:#E9E6DC;border-radius:10px;padding:8px 12px;margin-bottom:8px}
@@ -221,7 +223,7 @@ a.cell:focus-visible{outline:3px solid #2F7FD8;outline-offset:1px}
 <div class="wrap" id="yWrap"><main>
   <section aria-labelledby="yh"><h2 id="yh">다음 빈자리 · 아르피아 테니스장</h2><div class="chips" id="yChips" role="group" aria-label="요일 필터"></div><div id="yErr"></div><div id="yNext"></div></section>
   <section aria-labelledby="yh2"><h2 id="yh2">날짜별 시간표</h2><div id="yLive" class="lmsg" role="status" aria-live="polite"></div><div id="yDays" style="display:flex;flex-direction:column;gap:10px"></div></section>
-  <div class="ycard"><p class="note"><span class="u">평일은 오늘부터 2주, 주말·공휴일은 다음 달 말일까지 보여 줍니다.</span> <span class="u">이 페이지를 열면 공식 사이트에서 가까운 날짜부터 차례로 가져옵니다(같은 날짜는 10분 안에는 다시 조회하지 않음).</span> <span class="u">아직 못 받은 날짜는 흐리게 마지막 저장본으로 보여 주고, 날짜 옆에 확인 시각을 적습니다.</span> <span class="u">그사이 예약될 수 있으니 예약 전에 공식 사이트에서 확인하세요(시간표 칸과 빈자리 항목을 누르면 해당 코트 예약 페이지가 열립니다).</span> <span class="u">‘새로 고침’은 이 페이지의 데이터만 다시 읽으며, 5분마다 자동으로도 읽습니다.</span></p>
+  <div class="ycard"><p class="note"><span class="u">평일은 오늘부터 2주, 주말·공휴일은 다음 달 말일까지 보여 줍니다.</span> <span class="u">이 페이지를 열면 공식 사이트에서 가까운 4날짜를 먼저, 이어서 주말·공휴일을 30초에 한 날짜씩 가져옵니다(같은 날짜는 10분 안에는 다시 조회하지 않음).</span> <span class="u">평일은 ‘지금 확인’ 버튼을 눌렀을 때만 가져옵니다.</span> <span class="u">아직 못 받은 날짜는 흐리게 마지막 저장본으로 보여 주고, 날짜 옆에 확인 시각을 적습니다.</span> <span class="u">그사이 예약될 수 있으니 예약 전에 공식 사이트에서 확인하세요(시간표 칸과 빈자리 항목을 누르면 해당 코트 예약 페이지가 열립니다).</span> <span class="u">‘새로 고침’은 이 페이지의 데이터만 다시 읽으며, 5분마다 자동으로도 읽습니다.</span></p>
   <a class="go" id="yGo" href="https://publicsports.yongin.go.kr/publicsports/sports/selectFcltyRceptResveListU.do" target="_blank" rel="noopener">공식 예약 사이트에서 예약하기 <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M5 3l5 5-5 5" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
   <p class="note"><span class="u">출처: 용인특례시 공공체육시설 통합예약(비로그인 공개 화면 기준).</span></p></div>
 </main></div>
@@ -350,11 +352,11 @@ a.cell:focus-visible{outline:3px solid #2F7FD8;outline-offset:1px}
   var OFFV='https://publicsports.yongin.go.kr/publicsports/sports/selectFcltyRceptResveViewU.do?resveId=';
   function curl(day,key){var m=(yd.ids||{})[day.slice(0,7)]||{};return m[key]?OFFV+m[key]:(yd.official_url||'')}
   /* 용인 실시간: 페이지를 열면 공식 사이트(Vercel 함수 /api/arpia 경유)에서 가까운 날짜부터 차례로 가져온다.
-     ① 가까운 4날짜(오늘 이후 첫 주말·공휴일 2일 + 오늘·내일) 1.5초 간격 → ② 나머지(주말·공휴일 다음 달 말까지 → 평일 2주) 4초 간격.
+     ① 가까운 4날짜(오늘 이후 첫 주말·공휴일 2일 + 오늘·내일) 1.5초 간격 → ① 끝나고 30초 뒤부터 ② 나머지 주말·공휴일(다음 달 말까지)만 30초에 한 날짜씩. 평일은 '지금 확인' 버튼으로만.
      탭이 숨겨지면 멈추고 다시 보이면 이어서. 429·오류면 즉시 멈추고 자동 재시도 없음. 같은 날짜는 서버가 10분 캐시. */
   var LIVE=new URLSearchParams(location.search).get('live')||'api/arpia';
   var FACILITIES=[{id:'arpia',name:'아르피아',api:LIVE}];   // 우선순위 배열: 다른 용인 코트가 생기면 뒤에 추가(같은 ①② 방식으로 이어 받음)
-  var GAP1=1500,GAP2=4000;
+  var GAP1=1500,GAP2=30000;   // ① 날짜 사이 1.5초, ① 끝난 뒤·② 날짜 사이 30초(분당 상한 20건 안에 들도록)
   var HOLI={'2026-12-25':1,'2027-01-01':1,'2027-02-06':1,'2027-02-07':1,'2027-02-08':1,'2027-02-09':1,'2027-03-01':1,'2027-05-05':1,'2027-05-13':1};   // fetch_yongin.py 의 HOLIDAYS 와 같게 유지
   var live={},liveBusy={},liveLast=0;
   var LV={run:0,state:'idle',queue:[],nfirst:0,i:0,timer:null,msg:'',skip:{},log:[],t0:0,fi:0};
@@ -370,23 +372,24 @@ a.cell:focus-visible{outline:3px solid #2F7FD8;outline-offset:1px}
     add(wk[0]);add(wk[1]);add(iso(today));add(tom);
     for(var j=2;first.length<4&&j<wk.length;j++)add(wk[j]);
     first.sort();
-    var rest=wk.filter(function(k){return first.indexOf(k)<0}).concat(wd.filter(function(k){return first.indexOf(k)<0}));
+    var rest=wk.filter(function(k){return first.indexOf(k)<0});   // 평일은 ② 에서 뺀다
     return{first:first,rest:rest}}
   function dayData(day){return live[day]?live[day].cs:((yd&&yd.days&&yd.days[day])||{})}
   function liveGet(day){return fetch(LIVE+'?date='+day.replace(/-/g,'')).then(function(r){return r.json().then(function(j){return{ok:r.ok,st:r.status,j:j}},function(){return{ok:r.ok,st:r.status,j:null}})})}
   function liveApply(day,x){var cs={};(x.j.courts||[]).forEach(function(c){cs[c.key]=c.slots});
     live[day]={t:Date.now(),at:hms(new Date()),cs:cs};
     if(!yd)yd={courts:(x.j.courts||[]).map(function(c){return{key:c.key,name:c.name}}),days:{},checked:{},ids:{},official_url:'https://publicsports.yongin.go.kr/publicsports/sports/selectFcltyRceptResveListU.do'}}
-  function liveBtn(day){return'<button type="button" class="live" data-day="'+day+'"'+(liveBusy[day]?' disabled':'')+'>'+(liveBusy[day]?'확인 중…':'지금 확인')+'</button>'}
+  function liveBtn(day){return'<button type="button" class="live'+(!live[day]&&!isWE(day)?' hl':'')+'" data-day="'+day+'"'+(liveBusy[day]?' disabled':'')+'>'+(liveBusy[day]?'확인 중…':'지금 확인')+'</button>'}
   function liveTag(day,isoStr){
     if(live[day])return'<i class="lv">방금 공식 조회 '+live[day].at.slice(0,5)+'</i>';
     if(liveBusy[day])return'<i class="ld"><b></b>받는 중…</i>';
     var d=parse(isoStr);if(!d)return'<i class="st">저장본</i>';
     var h=Math.floor((Date.now()-d)/36e5);return'<i class="st">'+(h<1?'1시간 안 저장본':h<48?h+'시간 전 저장본':Math.floor(h/24)+'일 전 저장본')+'</i>'}
   function liveStatus(){var el=$('yLive'),n=LV.queue.length,m='';
-    if(LV.state==='running')m='공식 사이트에서 가져오는 중 '+Math.min(LV.i+1,n)+'/'+n+' — 가까운 날짜부터. 아직 못 받은 날짜는 흐리게 마지막 저장본으로 보여 줍니다.';
+    var wk=LV.queue.filter(isWE),wkDone=wk.filter(function(d){return live[d]}).length;
+    if(LV.state==='running')m=(LV.i<LV.nfirst?'가까운 날짜 '+Math.min(LV.i+1,LV.nfirst)+'/'+LV.nfirst+' 받는 중':'주말·공휴일 '+wkDone+'/'+wk.length+' 받는 중(30초에 한 날짜)')+' — 아직 못 받은 날짜는 흐리게 마지막 저장본으로 보여 줍니다. 평일은 ‘지금 확인’으로 받습니다.';
     else if(LV.state==='paused')m='탭이 숨겨져 잠시 멈췄습니다. 다시 열면 이어서 가져옵니다.';
-    else if(LV.state==='done')m='공식 사이트 조회 완료 '+LV.fin+' ('+n+'일). 같은 날짜는 10분 안에는 다시 조회하지 않습니다.';
+    else if(LV.state==='done')m='주말·공휴일 '+wk.length+'일 공식 조회 완료 '+LV.fin+'. 평일은 ‘지금 확인’ 버튼으로 받을 수 있습니다(같은 날짜는 10분 안에는 다시 조회하지 않음).';
     else if(LV.state==='stopped')m=LV.msg;
     el.textContent=m;el.setAttribute('data-log',JSON.stringify(LV.log))}
   function liveRun(){
@@ -403,7 +406,7 @@ a.cell:focus-visible{outline:3px solid #2F7FD8;outline-offset:1px}
     liveGet(day).then(function(x){
       delete liveBusy[day];if(my!==LV.run)return;
       LV.log.push([day,x.st,Date.now()-LV.t0,Date.now()-t1]);
-      if(x.ok&&x.j&&x.j.courts){liveApply(day,x);LV.i++;LV.timer=setTimeout(function(){liveStep(my)},idx<LV.nfirst?GAP1:GAP2)}
+      if(x.ok&&x.j&&x.j.courts){liveApply(day,x);LV.i++;LV.timer=setTimeout(function(){liveStep(my)},idx<LV.nfirst-1?GAP1:GAP2)}
       else if(x.st===404){LV.skip[day.slice(0,7)]=1;LV.i++;LV.timer=setTimeout(function(){liveStep(my)},500)}
       else{LV.state='stopped';LV.msg=(x.st===429||x.st===503)?'공식 사이트 조회가 몰려 있어 가져오기를 멈췄습니다. 잠시 후 ‘새로 고침’을 눌러 주세요. 남은 날짜는 마지막 저장본입니다.':'공식 사이트 조회에 실패해 가져오기를 멈췄습니다. 잠시 후 ‘새로 고침’을 눌러 주세요. 남은 날짜는 마지막 저장본입니다.'}
     },function(){delete liveBusy[day];if(my!==LV.run)return;LV.log.push([day,0,Date.now()-LV.t0,Date.now()-t1]);LV.state='stopped';LV.msg='공식 사이트 조회에 실패해 가져오기를 멈췄습니다. 잠시 후 ‘새로 고침’을 눌러 주세요. 남은 날짜는 마지막 저장본입니다.'})

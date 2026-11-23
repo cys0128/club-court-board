@@ -118,3 +118,7 @@ python -m http.server 18911            # 후 http://127.0.0.1:18911/index.html (
 - `GET /api/seoul`(`web/api/seoul.js`, Vercel): 서울 열린데이터 ListPublicReservationSport(HTTP 전용)에서 테니스장만 받아 `courts.json` 과 같은 형식으로 반환. 캐시 `s-maxage=3600, stale-while-revalidate=3600`(+ 인스턴스 메모리 1시간). 인증키는 Vercel 환경변수 `SEOUL_API_KEY`(production, 시크릿으로 저장 — 코드·로그·응답·커밋에 없음). 키 교체: `cd web && printf '%s' "<키>" | vercel env add SEOUL_API_KEY production --sensitive --yes` 후 재배포.
 - 화면: 서울 탭은 `/api/seoul` 을 읽고, 실패하면 GitHub Pages 의 마지막 `courts.json` 을 흐리게(저장본) 표시. 문구 "서울 데이터는 열 때 가져옵니다(최대 1시간 저장)".
 - `data/courts.json` 은 이제 저장소에 커밋된 마지막 저장본(2026-11-23 16:20, 318곳)이다.
+
+### ② 범위 조정 (2026-11-23, 사용자 결정)
+- ② 는 **주말·공휴일만**(다음 달 말까지), ① 이 끝난 **30초 뒤부터 30초에 한 날짜씩**. 평일은 ② 에서 빼고 날짜별 '지금 확인' 버튼으로만(저장본 흐리게 + 버튼 강조 표시). 진행은 "주말·공휴일 n/m 받는 중".
+- 분당 상한 20건(함수) 안에 들도록: ① 16건 → 30초 뒤 첫 ② 날짜 4건(1분 창 안에서 합계 20건) → 이후 30초마다 4건(분당 8건). 탭 숨김 시 멈춤, 429·오류 즉시 중단, 자동 재시도 없음은 그대로.
