@@ -1,2 +1,4 @@
 design/
 data/yongin.json
+live/.vercel
+__pycache__/

@@ -1,0 +1,4 @@
+{
+  "regions": ["hnd1"],
+  "functions": { "api/arpia.js": { "maxDuration": 20 } }
+}

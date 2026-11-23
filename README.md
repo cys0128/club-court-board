@@ -79,3 +79,12 @@ python -m http.server 18911            # 후 http://127.0.0.1:18911/index.html (
 - **백오프**: 한 번이라도 걸리면 다음 실행부터 30분 간격. 이후 연속 3회 성공하면 평소(15분)로 복귀. 재시도·우회 없음.
 - 서울 수집은 건드리지 않는다. 서울은 매시 정각 실행(분<15)·수동·push 때만 돌고, 그 외 실행은 배포된 이전 `courts.json` 을 유지해서 올린다.
 - 공휴일은 `HOLIDAYS` 에 직접 관리(해마다 갱신).
+
+## 용인 "지금 확인" — 실시간 조회 함수 (live/)
+수집(15분)과 별개로, 화면에서 사람이 **지금 확인** 버튼을 누를 때만 공식 사이트를 그 날짜 1일치(4면=4건) 조회한다.
+- 함수: `live/api/arpia.js` → Vercel 프로젝트 `club-court-live`, `GET https://club-court-live.vercel.app/api/arpia?date=YYYYMMDD`. 리전 **hnd1**(ytcc 의 icn1 과 IP 분리), Node 24.
+- 열린 프록시 방지: `date` 하나만 허용(다른 파라미터 400), 오늘~다음 달 말일만, 아르피아 4면 resveId(공개 `data/yongin.json` 의 `ids` + 시드)만 호출. 다른 resveId·경로 호출 불가.
+- 공식 요청 4건은 건 사이 1초. 응답은 시간대·상태만(예약자 필드 제외). 캐시 `s-maxage=60, stale-while-revalidate=60` + 인스턴스 메모리 60초 → 같은 날짜는 1분 안에 공식 재조회 안 함.
+- 전역 제한: 인스턴스 기준 분당 공식 요청 12건 초과 시 429. 공식 오류·비정상 응답이면 즉시 실패(재시도 없음) + 60초간 공식 호출 중단(503). 화면은 기존 데이터를 유지하고 안내만 띄운다.
+- CORS: `https://yschoi128.github.io`(와 로컬 시험 `127.0.0.1:18911`)만 허용. 화면은 자동 호출하지 않는다.
+- 배포: `cd live && vercel deploy --prod --yes --name club-court-live` (개인 Vercel 계정). 시크릿 없음.
