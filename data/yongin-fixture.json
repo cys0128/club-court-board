@@ -1,0 +1,710 @@
+{
+ "updated_at": "2026-11-23T14:00:00+09:00",
+ "fetch_ok": true,
+ "last_error": "",
+ "last_attempt_at": "2026-11-23T14:38:15+09:00",
+ "last_request_count": 16,
+ "facility": "아르피아 테니스장",
+ "official_url": "https://publicsports.yongin.go.kr/publicsports/sports/selectFcltyRceptResveListU.do",
+ "courts": [
+  {
+   "key": "c1",
+   "name": "1코트"
+  },
+  {
+   "key": "c2",
+   "name": "2코트"
+  },
+  {
+   "key": "c3",
+   "name": "3코트"
+  },
+  {
+   "key": "cd",
+   "name": "장애인 코트"
+  }
+ ],
+ "missing_months": [],
+ "truncated": false,
+ "stts_seen": [
+  "RESVECOMPT"
+ ],
+ "days": {
+  "2026-11-28": {
+   "c1": [
+    {
+     "s": "07:00",
+     "e": "09:00",
+     "stts": "RESVECOMPT",
+     "open": false
+    },
+    {
+     "s": "09:00",
+     "e": "11:00",
+     "stts": "RESVECOMPT",
+     "open": false
+    },
+    {
+     "s": "11:00",
+     "e": "13:00",
+     "stts": "RESVECOMPT",
+     "open": false
+    },
+    {
+     "s": "13:00",
+     "e": "15:00",
+     "stts": "RESVECOMPT",
+     "open": false
+    },
+    {
+     "s": "15:00",
+     "e": "17:00",
+     "stts": "RESVECOMPT",
+     "open": false
+    },
+    {
+     "s": "17:00",
+     "e": "19:00",
+     "stts": "RESVECOMPT",
+     "open": false
+    },
+    {
+     "s": "19:00",
+     "e": "21:00",
+     "stts": "RESVECOMPT",
+     "open": false
+    }
+   ],
+   "c2": [
+    {
+     "s": "07:00",
+     "e": "09:00",
+     "stts": "RESVECOMPT",
+     "open": false
+    },
+    {
+     "s": "09:00",
+     "e": "11:00",
+     "stts": "",
+     "open": true
+    },
+    {
+     "s": "11:00",
+     "e": "13:00",
+     "stts": "RESVECOMPT",
+     "open": false
+    },
+    {
+     "s": "13:00",
+     "e": "15:00",
+     "stts": "RESVECOMPT",
+     "open": false
+    },
+    {
+     "s": "15:00",
+     "e": "17:00",
+     "stts": "RESVECOMPT",
+     "open": false
+    },
+    {
+     "s": "17:00",
+     "e": "19:00",
+     "stts": "RESVECOMPT",
+     "open": false
+    },
+    {
+     "s": "19:00",
+     "e": "21:00",
+     "stts": "RESVECOMPT",
+     "open": false
+    }
+   ],
+   "c3": [
+    {
+     "s": "07:00",
+     "e": "09:00",
+     "stts": "RESVECOMPT",
+     "open": false
+    },
+    {
+     "s": "09:00",
+     "e": "11:00",
+     "stts": "",
+     "open": true
+    },
+    {
+     "s": "11:00",
+     "e": "13:00",
+     "stts": "RESVECOMPT",
+     "open": false
+    },
+    {
+     "s": "13:00",
+     "e": "15:00",
+     "stts": "RESVECOMPT",
+     "open": false
+    },
+    {
+     "s": "15:00",
+     "e": "17:00",
+     "stts": "RESVECOMPT",
+     "open": false
+    },
+    {
+     "s": "17:00",
+     "e": "19:00",
+     "stts": "RESVECOMPT",
+     "open": false
+    },
+    {
+     "s": "19:00",
+     "e": "21:00",
+     "stts": "RESVECOMPT",
+     "open": false
+    }
+   ],
+   "cd": [
+    {
+     "s": "11:00",
+     "e": "13:00",
+     "stts": "RESVECOMPT",
+     "open": false
+    },
+    {
+     "s": "13:00",
+     "e": "15:00",
+     "stts": "RESVECOMPT",
+     "open": false
+    },
+    {
+     "s": "15:00",
+     "e": "17:00",
+     "stts": "RESVECOMPT",
+     "open": false
+    },
+    {
+     "s": "17:00",
+     "e": "19:00",
+     "stts": "RESVECOMPT",
+     "open": false
+    },
+    {
+     "s": "19:00",
+     "e": "21:00",
+     "stts": "RESVECOMPT",
+     "open": false
+    }
+   ]
+  },
+  "2026-11-29": {
+   "c1": [
+    {
+     "s": "07:00",
+     "e": "09:00",
+     "stts": "RESVECOMPT",
+     "open": false
+    },
+    {
+     "s": "09:00",
+     "e": "11:00",
+     "stts": "RESVECOMPT",
+     "open": false
+    },
+    {
+     "s": "11:00",
+     "e": "13:00",
+     "stts": "RESVECOMPT",
+     "open": false
+    },
+    {
+     "s": "13:00",
+     "e": "15:00",
+     "stts": "RESVECOMPT",
+     "open": false
+    },
+    {
+     "s": "15:00",
+     "e": "17:00",
+     "stts": "",
+     "open": true
+    },
+    {
+     "s": "17:00",
+     "e": "19:00",
+     "stts": "RESVECOMPT",
+     "open": false
+    },
+    {
+     "s": "19:00",
+     "e": "21:00",
+     "stts": "RESVECOMPT",
+     "open": false
+    }
+   ],
+   "c2": [
+    {
+     "s": "07:00",
+     "e": "09:00",
+     "stts": "RESVECOMPT",
+     "open": false
+    },
+    {
+     "s": "09:00",
+     "e": "11:00",
+     "stts": "RESVECOMPT",
+     "open": false
+    },
+    {
+     "s": "11:00",
+     "e": "13:00",
+     "stts": "RESVECOMPT",
+     "open": false
+    },
+    {
+     "s": "13:00",
+     "e": "15:00",
+     "stts": "RESVECOMPT",
+     "open": false
+    },
+    {
+     "s": "15:00",
+     "e": "17:00",
+     "stts": "RESVECOMPT",
+     "open": false
+    },
+    {
+     "s": "17:00",
+     "e": "19:00",
+     "stts": "RESVECOMPT",
+     "open": false
+    },
+    {
+     "s": "19:00",
+     "e": "21:00",
+     "stts": "RESVECOMPT",
+     "open": false
+    }
+   ],
+   "c3": [
+    {
+     "s": "07:00",
+     "e": "09:00",
+     "stts": "RESVECOMPT",
+     "open": false
+    },
+    {
+     "s": "09:00",
+     "e": "11:00",
+     "stts": "RESVECOMPT",
+     "open": false
+    },
+    {
+     "s": "11:00",
+     "e": "13:00",
+     "stts": "RESVECOMPT",
+     "open": false
+    },
+    {
+     "s": "13:00",
+     "e": "15:00",
+     "stts": "RESVECOMPT",
+     "open": false
+    },
+    {
+     "s": "15:00",
+     "e": "17:00",
+     "stts": "RESVECOMPT",
+     "open": false
+    },
+    {
+     "s": "17:00",
+     "e": "19:00",
+     "stts": "RESVECOMPT",
+     "open": false
+    },
+    {
+     "s": "19:00",
+     "e": "21:00",
+     "stts": "RESVECOMPT",
+     "open": false
+    }
+   ],
+   "cd": [
+    {
+     "s": "09:00",
+     "e": "11:00",
+     "stts": "RESVECOMPT",
+     "open": false
+    },
+    {
+     "s": "11:00",
+     "e": "13:00",
+     "stts": "RESVECOMPT",
+     "open": false
+    },
+    {
+     "s": "13:00",
+     "e": "15:00",
+     "stts": "RESVECOMPT",
+     "open": false
+    },
+    {
+     "s": "15:00",
+     "e": "17:00",
+     "stts": "RESVECOMPT",
+     "open": false
+    },
+    {
+     "s": "17:00",
+     "e": "19:00",
+     "stts": "RESVECOMPT",
+     "open": false
+    },
+    {
+     "s": "19:00",
+     "e": "21:00",
+     "stts": "RESVECOMPT",
+     "open": false
+    }
+   ]
+  },
+  "2026-12-05": {
+   "c1": [
+    {
+     "s": "07:00",
+     "e": "09:00",
+     "stts": "RESVECOMPT",
+     "open": false
+    },
+    {
+     "s": "09:00",
+     "e": "11:00",
+     "stts": "RESVECOMPT",
+     "open": false
+    },
+    {
+     "s": "11:00",
+     "e": "13:00",
+     "stts": "RESVECOMPT",
+     "open": false
+    },
+    {
+     "s": "13:00",
+     "e": "15:00",
+     "stts": "RESVECOMPT",
+     "open": false
+    },
+    {
+     "s": "15:00",
+     "e": "17:00",
+     "stts": "RESVECOMPT",
+     "open": false
+    },
+    {
+     "s": "17:00",
+     "e": "19:00",
+     "stts": "RESVECOMPT",
+     "open": false
+    },
+    {
+     "s": "19:00",
+     "e": "21:00",
+     "stts": "RESVECOMPT",
+     "open": false
+    }
+   ],
+   "c2": [
+    {
+     "s": "07:00",
+     "e": "09:00",
+     "stts": "RESVECOMPT",
+     "open": false
+    },
+    {
+     "s": "09:00",
+     "e": "11:00",
+     "stts": "RESVECOMPT",
+     "open": false
+    },
+    {
+     "s": "11:00",
+     "e": "13:00",
+     "stts": "RESVECOMPT",
+     "open": false
+    },
+    {
+     "s": "13:00",
+     "e": "15:00",
+     "stts": "RESVECOMPT",
+     "open": false
+    },
+    {
+     "s": "15:00",
+     "e": "17:00",
+     "stts": "RESVECOMPT",
+     "open": false
+    },
+    {
+     "s": "17:00",
+     "e": "19:00",
+     "stts": "RESVECOMPT",
+     "open": false
+    },
+    {
+     "s": "19:00",
+     "e": "21:00",
+     "stts": "RESVECOMPT",
+     "open": false
+    }
+   ],
+   "c3": [
+    {
+     "s": "07:00",
+     "e": "09:00",
+     "stts": "RESVECOMPT",
+     "open": false
+    },
+    {
+     "s": "09:00",
+     "e": "11:00",
+     "stts": "RESVECOMPT",
+     "open": false
+    },
+    {
+     "s": "11:00",
+     "e": "13:00",
+     "stts": "RESVECOMPT",
+     "open": false
+    },
+    {
+     "s": "13:00",
+     "e": "15:00",
+     "stts": "RESVECOMPT",
+     "open": false
+    },
+    {
+     "s": "15:00",
+     "e": "17:00",
+     "stts": "RESVECOMPT",
+     "open": false
+    },
+    {
+     "s": "17:00",
+     "e": "19:00",
+     "stts": "RESVECOMPT",
+     "open": false
+    },
+    {
+     "s": "19:00",
+     "e": "21:00",
+     "stts": "RESVECOMPT",
+     "open": false
+    }
+   ],
+   "cd": [
+    {
+     "s": "11:00",
+     "e": "13:00",
+     "stts": "",
+     "open": true
+    },
+    {
+     "s": "13:00",
+     "e": "15:00",
+     "stts": "RESVECOMPT",
+     "open": false
+    },
+    {
+     "s": "15:00",
+     "e": "17:00",
+     "stts": "RESVECOMPT",
+     "open": false
+    },
+    {
+     "s": "17:00",
+     "e": "19:00",
+     "stts": "RESVECOMPT",
+     "open": false
+    },
+    {
+     "s": "19:00",
+     "e": "21:00",
+     "stts": "RESVECOMPT",
+     "open": false
+    }
+   ]
+  },
+  "2026-12-06": {
+   "c1": [
+    {
+     "s": "07:00",
+     "e": "09:00",
+     "stts": "RESVECOMPT",
+     "open": false
+    },
+    {
+     "s": "09:00",
+     "e": "11:00",
+     "stts": "RESVECOMPT",
+     "open": false
+    },
+    {
+     "s": "11:00",
+     "e": "13:00",
+     "stts": "RESVECOMPT",
+     "open": false
+    },
+    {
+     "s": "13:00",
+     "e": "15:00",
+     "stts": "RESVECOMPT",
+     "open": false
+    },
+    {
+     "s": "15:00",
+     "e": "17:00",
+     "stts": "RESVECOMPT",
+     "open": false
+    },
+    {
+     "s": "17:00",
+     "e": "19:00",
+     "stts": "RESVECOMPT",
+     "open": false
+    },
+    {
+     "s": "19:00",
+     "e": "21:00",
+     "stts": "RESVECOMPT",
+     "open": false
+    }
+   ],
+   "c2": [
+    {
+     "s": "07:00",
+     "e": "09:00",
+     "stts": "RESVECOMPT",
+     "open": false
+    },
+    {
+     "s": "09:00",
+     "e": "11:00",
+     "stts": "RESVECOMPT",
+     "open": false
+    },
+    {
+     "s": "11:00",
+     "e": "13:00",
+     "stts": "RESVECOMPT",
+     "open": false
+    },
+    {
+     "s": "13:00",
+     "e": "15:00",
+     "stts": "RESVECOMPT",
+     "open": false
+    },
+    {
+     "s": "15:00",
+     "e": "17:00",
+     "stts": "RESVECOMPT",
+     "open": false
+    },
+    {
+     "s": "17:00",
+     "e": "19:00",
+     "stts": "",
+     "open": true
+    },
+    {
+     "s": "19:00",
+     "e": "21:00",
+     "stts": "RESVECOMPT",
+     "open": false
+    }
+   ],
+   "c3": [
+    {
+     "s": "07:00",
+     "e": "09:00",
+     "stts": "RESVECOMPT",
+     "open": false
+    },
+    {
+     "s": "09:00",
+     "e": "11:00",
+     "stts": "RESVECOMPT",
+     "open": false
+    },
+    {
+     "s": "11:00",
+     "e": "13:00",
+     "stts": "RESVECOMPT",
+     "open": false
+    },
+    {
+     "s": "13:00",
+     "e": "15:00",
+     "stts": "RESVECOMPT",
+     "open": false
+    },
+    {
+     "s": "15:00",
+     "e": "17:00",
+     "stts": "RESVECOMPT",
+     "open": false
+    },
+    {
+     "s": "17:00",
+     "e": "19:00",
+     "stts": "",
+     "open": true
+    },
+    {
+     "s": "19:00",
+     "e": "21:00",
+     "stts": "RESVECOMPT",
+     "open": false
+    }
+   ],
+   "cd": [
+    {
+     "s": "09:00",
+     "e": "11:00",
+     "stts": "RESVECOMPT",
+     "open": false
+    },
+    {
+     "s": "11:00",
+     "e": "13:00",
+     "stts": "RESVECOMPT",
+     "open": false
+    },
+    {
+     "s": "13:00",
+     "e": "15:00",
+     "stts": "RESVECOMPT",
+     "open": false
+    },
+    {
+     "s": "15:00",
+     "e": "17:00",
+     "stts": "RESVECOMPT",
+     "open": false
+    },
+    {
+     "s": "17:00",
+     "e": "19:00",
+     "stts": "RESVECOMPT",
+     "open": false
+    },
+    {
+     "s": "19:00",
+     "e": "21:00",
+     "stts": "RESVECOMPT",
+     "open": false
+    }
+   ]
+  }
+ }
+}

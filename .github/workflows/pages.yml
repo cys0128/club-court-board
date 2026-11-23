@@ -27,11 +27,19 @@ jobs:
         env:
           SEOUL_API_KEY: ${{ secrets.SEOUL_API_KEY }}
         run: python fetch_courts.py
+      - name: 용인 이전 데이터 내려받기 (실패 시 이전 값 유지용, 우리 사이트 파일)
+        run: |
+          mkdir -p data
+          curl -fsS -m 30 https://yschoi128.github.io/club-court-board/data/yongin.json -o data/yongin.json || rm -f data/yongin.json
+          python -c "import json;json.load(open('data/yongin.json',encoding='utf-8'))" 2>/dev/null || rm -f data/yongin.json
+      - name: fetch yongin (아르피아, 3시간마다·실행당 최대 24건·건 사이 5초, 실패해도 배포는 계속)
+        run: python fetch_yongin.py
       - name: build site (courts.json 은 커밋하지 않고 산출물로만)
         run: |
           mkdir -p _site/data
           cp index.html _site/
           cp data/courts.json _site/data/
+          cp data/yongin.json _site/data/ || true
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:

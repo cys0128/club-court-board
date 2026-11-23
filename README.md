@@ -48,8 +48,28 @@ python -m http.server 18911            # 후 http://127.0.0.1:18911/index.html (
 1시간마다 `python D:\AI\club-court-board\fetch_courts.py` 를 실행하면 된다. Windows 작업 스케줄러 예:
 `schtasks /Create /SC HOURLY /TN court-board /TR "python D:\AI\club-court-board\fetch_courts.py"`
 
-## 하지 않는 것
-상세 HTML 스크래핑, 시간대 슬롯 AJAX 호출, 차단 우회, 로그인·예약 자동화. 목록 API 만 쓴다.
+## 하지 않는 것 (서울)
+서울 쪽은 목록 API 만 쓴다: 상세 HTML 스크래핑, 시간대 슬롯 AJAX 호출, 차단 우회, 로그인·예약 자동화 없음.
 
 ## 알림
 알림은 만들지 않았다. `courts.json` 의 이전·현재 변화 비교(접수중 전환·신규 등록)로 나중에 붙일 수 있다.
+
+## 용인 탭 — 아르피아 테니스장 (4면: 1·2·3코트 + 장애인 코트)
+`fetch_yongin.py` → `data/yongin.json`(저장소엔 커밋하지 않고 배포 산출물로만. `data/yongin-fixture.json` 은 화면 확인용 가짜 빈자리). 배경·조사: `D:\AI\docs\ideas\yongin-court-check.md`.
+
+### 공식 요청 형식 (로그인·쿠키 없이 응답, 2026-11-23 확인)
+`POST https://publicsports.yongin.go.kr/publicsports/sports/selectRegistTimeByChosenDateFcltyRceptResveApply.do` form `dateVal=YYYYMMDD&resveId=<코트 월별 ID>` → JSON `fcltRceptRsvctmTime[]`(`useDe`, `useTm` "9:00 ~ 11:00", `rsvctmStts`), `resveTmList`, `lmttApp` 등.
+- 코트 ID 는 월마다 다름: 11월 14883·14884·14885·14886(장애인) / 12월 15150~15153. 새 달 ID 는 `fetch_yongin.py` 의 `COURTS` 에 추가(ytcc.info/courts.json 을 참고용으로만 읽음). ID 없는 달은 수집하지 않고 `missing_months` 에 표시.
+- 예약자 관련 필드(`frstRegisterNmApply` 등)는 읽지도 저장하지도 않는다. 저장은 시간대·상태만.
+- 이 경로 외 다른 경로 호출·로그인·쿠키·헤더 위조 없음. User-Agent 는 `club-court-board/1.0`.
+
+### 빈자리 / 마감 판정
+- **빈자리** = 응답의 `resveTmList`(예약 가능 시간 목록)에 든 시간대. ytcc.info 화면도 이 목록을 "빈자리"로 표시한다.
+- **마감** = 그 외 전부. `rsvctmStts` 는 실제 응답에서 `RESVECOMPT`(예약완료) 한 가지만 관측(16건 ×2회). 모르는 값·빈 값은 마감으로 취급.
+- 예약 이력 없는 틀(`timeId`=0, 상태 없음)이면서 `resveTmList` 에도 없는 칸(장애인 코트의 1시간 단위 틀들)은 표에서 뺀다.
+- **미확인**: 2026-11-23 관측 시점엔 주말이 전부 마감이라 `resveTmList` 에 항목이 들어 있는 응답을 아직 못 봤다. 항목 형식을 못 읽으면 수집을 중단하고 "갱신 실패"로 표시해 눈에 띄게 한다(조용히 마감 처리하지 않음). 첫 실제 빈자리가 뜨면 형식 확인 필요.
+
+### 수집 규칙
+- 오늘부터 14일 중 토·일·공휴일(`HOLIDAYS` 직접 관리) × 4면. 현재 4일 → **실행당 16건**, 상한 24건, 건 사이 5초(약 1분 20초).
+- 워크플로는 매시 돌지만 직전 성공 후 2.75시간이 안 지났으면 요청 0건으로 건너뜀 → 실제 호출은 **3시간마다**(하루 8회 ≈ 128건).
+- 차단·오류 징후(HTTP 오류·리다이렉트·JSON 아님·필수 키 없음·빈 응답·형식 이상) 시 즉시 중단, 이전 `yongin.json` 유지(워크플로가 배포된 이전 파일을 먼저 내려받음), 화면에 "갱신 실패" 표시. 재시도·우회 없음.
