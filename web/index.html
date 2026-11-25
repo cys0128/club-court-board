@@ -211,28 +211,26 @@ a.cell:focus-visible{outline:3px solid #2F7FD8;outline-offset:1px}
 #pbBody[hidden]{display:none}
 .flabel small{font-weight:400;color:var(--sub);margin-left:6px;font-size:12px}
 .cal{display:flex;flex-direction:column;gap:12px}
-.calm{display:flex;flex-direction:column;gap:4px;max-width:420px}
-.calm b{font-size:13px;color:var(--sub2)}
+.calm{display:flex;flex-direction:column;gap:8px;max-width:440px;width:100%}
+.calnav{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.calnav b{font-size:16px;font-weight:700;color:var(--ink)}
+.cal .calarr{width:44px;height:44px;min-height:44px;border-radius:50%;border:1px solid var(--line);background:#fff;color:var(--ink);font-size:22px;line-height:1;padding:0 0 3px}
+.cal .calarr:disabled{opacity:.3;cursor:default}
+.calno{margin:0}
 .calg{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px}
-.calg span{font-size:11px;color:var(--sub);text-align:center}
-.cal button{min-height:44px;border-radius:10px;border:1px solid var(--line);background:#fff;color:var(--ink);font-size:14px;font-variant-numeric:tabular-nums;cursor:pointer;padding:0}
-.cal button.we{color:#B23B1E}
-.cal button[aria-pressed=true]{background:var(--court);border-color:var(--court);color:#fff;font-weight:700}
-.cal button:disabled{visibility:hidden}
-.pbact{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
-.pbsub{min-height:48px;padding:0 22px;border-radius:14px;border:0;background:var(--court);color:#fff;font-size:15px;font-weight:700;cursor:pointer}
-.pbsub:disabled{opacity:.5;cursor:default}
-.pbmsg{font-size:13px;color:var(--sub2)}
-.pbmsg:empty{display:none}
-.pbmsg.bad{color:#7A2E17}
-.pbenv{display:flex;flex-direction:column;gap:6px}
-.pbenv:empty{display:none}
-.dday.flash{box-shadow:0 0 0 3px var(--ball)}
-.cal button.has{position:relative;font-weight:700}
-.cal button.has::after{content:"";position:absolute;left:50%;bottom:5px;width:6px;height:6px;margin-left:-3px;border-radius:50%;background:#2E9E5B}
-.cal button.has[aria-pressed=true]::after{background:var(--ball)}
-#yPick{flex-direction:row;flex-wrap:wrap;gap:16px}
-#yPick .calm{flex:1 1 280px}
+.calg .dw{font-size:12px;font-weight:600;color:var(--sub);text-align:center;padding:2px 0}
+.calg .dw.sun{color:#C2410C}.calg .dw.sat{color:#2563A8}
+.cal .calg button{min-height:46px;border-radius:12px;border:1px solid var(--line);background:#fff;color:var(--ink);font-size:15px;font-variant-numeric:tabular-nums;cursor:pointer;padding:0;position:relative}
+.cal .calg button:hover:not(:disabled){border-color:var(--court)}
+.cal .calg button.sun{color:#C2410C}.cal .calg button.sat{color:#2563A8}
+.cal .calg button.today{border-color:var(--ink);font-weight:700}
+.cal .calg button.today::before{content:"오늘";position:absolute;top:2px;left:0;right:0;font-size:9px;font-weight:600;color:var(--sub)}
+.cal .calg button[aria-pressed=true]{background:var(--court);border-color:var(--court);color:#fff;font-weight:700}
+.cal .calg button[aria-pressed=true]::before{color:#CFE3D8}
+.cal .calg button:disabled{background:transparent;border-color:transparent;color:#B9BDB8;cursor:default}
+.cal .calg button.has{font-weight:700}
+.cal .calg button.has::after{content:"";position:absolute;left:50%;bottom:5px;width:6px;height:6px;margin-left:-3px;border-radius:50%;background:#2E9E5B}
+.cal .calg button.has[aria-pressed=true]::after{background:var(--ball)}
 </style>
 </head>
 <body>
@@ -588,21 +586,28 @@ a.cell:focus-visible{outline:3px solid #2F7FD8;outline-offset:1px}
   var DEEP=(new URLSearchParams(location.search).get('d')||'');if(!/^\d{4}-\d{2}-\d{2}$/.test(DEEP))DEEP='';
   /* ---------- 달력(날짜 고르기·알림 날짜 공용): 오늘 ~ 다음 달 말일 ---------- */
   function pbRange(){var n=new Date(),a=new Date(n.getFullYear(),n.getMonth(),n.getDate()),b=new Date(n.getFullYear(),n.getMonth()+2,0);return[a,b]}
-  function calHtml(sel,mark){var r=pbRange(),h='',d=new Date(r[0].getFullYear(),r[0].getMonth(),1);
-    while(d<=r[1]){var y=d.getFullYear(),m=d.getMonth(),first=new Date(y,m,1).getDay(),last=new Date(y,m+1,0).getDate();
-      h+='<div class="calm"><b>'+y+'년 '+(m+1)+'월</b><div class="calg" role="group" aria-label="'+(m+1)+'월 날짜">'+DOW.map(function(w){return'<span aria-hidden="true">'+w+'</span>'}).join('');
-      var k0=1;if(y===r[0].getFullYear()&&m===r[0].getMonth()){k0=r[0].getDate()-r[0].getDay();if(k0<1)k0=1;else first=0}   // 이번 달은 이번 주부터(지난 주 줄은 뺌)
-      for(var i=0;i<first;i++)h+='<button type="button" disabled tabindex="-1" aria-hidden="true"></button>';
-      for(var k=k0;k<=last;k++){var dd=new Date(y,m,k),key=iso(dd),off=dd<r[0]||dd>r[1],mk=mark?mark(key):'';
-        h+='<button type="button" data-d="'+key+'"'+(off?' disabled':'')+' class="'+(isWE(key)?'we':'')+(mk?' '+mk:'')+'" aria-pressed="'+!!sel[key]+'" aria-label="'+dlabel(key)+(isWE(key)?' 주말·공휴일':'')+(mk==='has'?' 빈자리 있음':'')+'">'+k+'</button>'}
-      h+='</div></div>';d=new Date(y,m+1,1)}
-    return h}
+  /* 월 달력 한 장(일~토). 이전/다음 달은 오늘 ~ 다음 달 말일 안에서만. 지난 날짜·예약 안 열린 달은 흐리게+누를 수 없음 */
+  var CALM={};   // 달력 id -> 보고 있는 달 오프셋(0=이번 달)
+  function calOpenMonth(ym){return !(yd&&(yd.missing_months||[]).indexOf(ym)>=0)}
+  function calMaxOff(){var r=pbRange();return (r[1].getFullYear()-r[0].getFullYear())*12+r[1].getMonth()-r[0].getMonth()}
+  function calHtml(sel,mark,id){var r=pbRange(),off=CALM[id]||0,mx=calMaxOff();if(off>mx)off=CALM[id]=mx;if(off<0)off=CALM[id]=0;
+    var y=r[0].getFullYear(),m=r[0].getMonth()+off;var b=new Date(y,m,1);y=b.getFullYear();m=b.getMonth();
+    var ym=y+'-'+p2(m+1),open=calOpenMonth(ym),first=b.getDay(),last=new Date(y,m+1,0).getDate(),tS=iso(r[0]);
+    var h='<div class="calm"><div class="calnav"><button type="button" class="calarr" data-nav="-1" aria-label="이전 달"'+(off<=0?' disabled':'')+'>‹</button><b aria-live="polite">'+y+'년 '+(m+1)+'월</b><button type="button" class="calarr" data-nav="1" aria-label="다음 달"'+(off>=mx?' disabled':'')+'>›</button></div>'
+      +(open?'':'<p class="note calno">'+(m+1)+'월 예약은 아직 열리지 않았어요.</p>')
+      +'<div class="calg" role="group" aria-label="'+(m+1)+'월 날짜">'+DOW.map(function(w,i){return'<span class="dw'+(i===0?' sun':i===6?' sat':'')+'" aria-hidden="true">'+w+'</span>'}).join('');
+    for(var i=0;i<first;i++)h+='<span aria-hidden="true"></span>';
+    for(var k=1;k<=last;k++){var dd=new Date(y,m,k),key=iso(dd),w=dd.getDay(),dis=!open||dd<r[0]||dd>r[1],mk=dis?'':(mark?mark(key):'');
+      var cls=(HOLI[key]||w===0?'sun':w===6?'sat':'')+(key===tS?' today':'')+(mk?' '+mk:'');
+      h+='<button type="button" data-d="'+key+'"'+(dis?' disabled':'')+' class="'+cls+'" aria-pressed="'+!!sel[key]+'" aria-label="'+dlabel(key)+(key===tS?' 오늘':'')+(HOLI[key]?' 공휴일':'')+(mk==='has'?' 빈자리 있음':'')+(dis?' 선택 불가':'')+'">'+k+'</button>'}
+    return h+'</div></div>'}
+  function calNav(e,id,render){var b=e.target.closest('[data-nav]');if(!b)return false;CALM[id]=(CALM[id]||0)+(+b.getAttribute('data-nav'));render();return true}
 
   /* ---------- 날짜로 찾기: 고른 날짜를 그 자리에서 공식 조회(평일 포함, '지금 확인'과 같은 요청·같은 서버 상한) ---------- */
   var YP={sel:{}};
   function ypMark(day){var cs=dayData(day),n=0;Object.keys(cs||{}).forEach(function(k){(cs[k]||[]).forEach(function(s){if(s.open)n++})});return n?'has':''}
-  function ypRender(){$('yPick').innerHTML=calHtml(YP.sel,ypMark)}
-  $('yPick').onclick=function(e){var b=e.target.closest('button[data-d]');if(!b)return;var k=b.getAttribute('data-d');
+  function ypRender(){$('yPick').innerHTML=calHtml(YP.sel,ypMark,'yPick')}
+  $('yPick').onclick=function(e){if(calNav(e,'yPick',ypRender))return;var b=e.target.closest('button[data-d]');if(!b)return;var k=b.getAttribute('data-d');
     YP.sel={};YP.sel[k]=1;ypRender();
     liveLast=0;liveCheck(k);                         // 같은 날짜는 서버가 10분 캐시
     setTimeout(function(){var el=document.querySelector('#yDays details.dday[data-day="'+k+'"]');if(el){el.open=true;el.scrollIntoView({behavior:'smooth',block:'start'})}},120)};
@@ -657,7 +662,7 @@ a.cell:focus-visible{outline:3px solid #2F7FD8;outline-offset:1px}
     else if(Notification.permission==='denied')env.push('<div class="notice">이 사이트 알림이 차단돼 있어요. 주소창 왼쪽 자물쇠(사이트 설정) → 알림 → 허용으로 바꾼 뒤 다시 눌러 주세요.</div>');
     if(!IOS)env.push('<p class="note">PC는 크롬·엣지·사파리에서 바로 됩니다. 브라우저가 묻는 ‘알림 허용’을 눌러 주세요.</p>');
     $('pbEnv').innerHTML=env.join('');
-    $('pbCal').innerHTML=calHtml(PB.dates);
+    $('pbCal').innerHTML=calHtml(PB.dates,null,'pbCal');
     $('pbTimes').innerHTML=pbTimesList().map(function(t){return'<button type="button" class="chip" data-t="'+t.s+'" aria-pressed="'+!!PB.times[t.s]+'">'+t.s+'~'+t.e+'</button>'}).join('');
     var cl=(yd&&yd.courts&&yd.courts.length?yd.courts:[{key:'c1',name:'1코트'},{key:'c2',name:'2코트'},{key:'c3',name:'3코트'},{key:'cd',name:'장애인 코트'}]);
     $('pbCourts').innerHTML=cl.map(function(c){return'<button type="button" class="chip" data-c="'+esc(c.key)+'" aria-pressed="'+!!PB.courts[c.key]+'">'+esc(c.name)+'</button>'}).join('');
@@ -666,7 +671,7 @@ a.cell:focus-visible{outline:3px solid #2F7FD8;outline-offset:1px}
     $('pbSave').disabled=!ok||PB.busy;$('pbSave').textContent=PB.subd?'변경 저장':'알림 신청';
     $('pbTest').hidden=!PB.subd;$('pbOff').hidden=!PB.subd}
   $('pbOpen').onclick=function(){PB.open=!PB.open;if(PB.open&&CANPUSH)pbKey().catch(function(){});pbRender()};
-  $('pbCal').onclick=function(e){var b=e.target.closest('button[data-d]');if(!b)return;var k=b.getAttribute('data-d');
+  $('pbCal').onclick=function(e){if(calNav(e,'pbCal',function(){$('pbCal').innerHTML=calHtml(PB.dates,null,'pbCal')}))return;var b=e.target.closest('button[data-d]');if(!b)return;var k=b.getAttribute('data-d');
     if(PB.dates[k])delete PB.dates[k];else{if(Object.keys(PB.dates).length>=20){pbMsg('날짜는 최대 20일까지 고를 수 있어요.',1);return}PB.dates[k]=1}
     b.setAttribute('aria-pressed',!!PB.dates[k]);pbMsg('')};
   $('pbTimes').onclick=function(e){var b=e.target.closest('[data-t]');if(!b)return;var k=b.getAttribute('data-t');if(PB.times[k])delete PB.times[k];else PB.times[k]=1;b.setAttribute('aria-pressed',!!PB.times[k])};
@@ -707,7 +712,7 @@ a.cell:focus-visible{outline:3px solid #2F7FD8;outline-offset:1px}
     Object.keys(j.days||{}).forEach(function(d){var c=(j.checked||{})[d]||'';if(!yd.checked[d]||c>yd.checked[d]){yd.days[d]=j.days[d];yd.checked[d]=c}});
     yrender();pbDeep()}).catch(function(){pbDeep()})}
   /* 알림을 눌러 들어온 경우(?d=YYYY-MM-DD#yongin): 그 날짜를 펼쳐 보여 준다 */
-  function pbDeep(){if(!DEEP)return;YP.sel={};YP.sel[DEEP]=1;liveLast=0;liveCheck(DEEP);yrender();var el=document.querySelector('#yDays details.dday[data-day="'+DEEP+'"]');
+  function pbDeep(){if(!DEEP)return;var r0=pbRange()[0];CALM.yPick=(+DEEP.slice(0,4)-r0.getFullYear())*12+(+DEEP.slice(5,7)-1-r0.getMonth());YP.sel={};YP.sel[DEEP]=1;liveLast=0;liveCheck(DEEP);yrender();var el=document.querySelector('#yDays details.dday[data-day="'+DEEP+'"]');
     if(!el){DEEP='';return}
     el.open=true;el.classList.add('flash');setTimeout(function(){el.classList.remove('flash')},2500);el.scrollIntoView({behavior:'smooth',block:'start'});DEEP=''}
   pbRender();ypRender();
