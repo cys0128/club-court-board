@@ -4,6 +4,11 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>우리 모임 코트판</title>
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<meta name="theme-color" content="#17533D">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="코트판">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -194,6 +199,40 @@ a.cell:focus-visible{outline:3px solid #2F7FD8;outline-offset:1px}
 .wk{font-style:normal;font-size:11px;font-weight:600;color:var(--sub2);border:1px solid var(--line);border-radius:6px;padding:1px 6px;margin-left:6px}
 .dday{background:var(--card);border-radius:14px;padding:4px 12px 12px}
 .err{background:#F6E3DC;color:#7A2E17;border-radius:10px;padding:10px 12px;font-size:13px}
+/* 빈자리 알림(웹 푸시) */
+.pushbox{background:var(--card);border-radius:18px;padding:14px 16px;display:flex;flex-direction:column;gap:14px;box-shadow:inset 0 0 0 1.5px var(--court)}
+.pbhead{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.pbhead h2{display:flex;align-items:center;gap:6px;color:var(--ink)}
+.pbtn{min-height:48px;padding:0 20px;border-radius:999px;border:0;background:var(--court);color:#fff;font-size:15px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:6px}
+.pbtn:hover{background:var(--court-d)}
+.pbtn[aria-expanded=true]{background:#fff;color:var(--court);box-shadow:inset 0 0 0 1.5px var(--court)}
+.pbtn:focus-visible,.pbsub:focus-visible,.cal button:focus-visible{outline:3px solid #2F7FD8;outline-offset:2px}
+#pbBody{display:flex;flex-direction:column;gap:16px}
+#pbBody[hidden]{display:none}
+.flabel small{font-weight:400;color:var(--sub);margin-left:6px;font-size:12px}
+.cal{display:flex;flex-direction:column;gap:12px}
+.calm{display:flex;flex-direction:column;gap:4px;max-width:420px}
+.calm b{font-size:13px;color:var(--sub2)}
+.calg{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px}
+.calg span{font-size:11px;color:var(--sub);text-align:center}
+.cal button{min-height:44px;border-radius:10px;border:1px solid var(--line);background:#fff;color:var(--ink);font-size:14px;font-variant-numeric:tabular-nums;cursor:pointer;padding:0}
+.cal button.we{color:#B23B1E}
+.cal button[aria-pressed=true]{background:var(--court);border-color:var(--court);color:#fff;font-weight:700}
+.cal button:disabled{visibility:hidden}
+.pbact{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.pbsub{min-height:48px;padding:0 22px;border-radius:14px;border:0;background:var(--court);color:#fff;font-size:15px;font-weight:700;cursor:pointer}
+.pbsub:disabled{opacity:.5;cursor:default}
+.pbmsg{font-size:13px;color:var(--sub2)}
+.pbmsg:empty{display:none}
+.pbmsg.bad{color:#7A2E17}
+.pbenv{display:flex;flex-direction:column;gap:6px}
+.pbenv:empty{display:none}
+.dday.flash{box-shadow:0 0 0 3px var(--ball)}
+.cal button.has{position:relative;font-weight:700}
+.cal button.has::after{content:"";position:absolute;left:50%;bottom:5px;width:6px;height:6px;margin-left:-3px;border-radius:50%;background:#2E9E5B}
+.cal button.has[aria-pressed=true]::after{background:var(--ball)}
+#yPick{flex-direction:row;flex-wrap:wrap;gap:16px}
+#yPick .calm{flex:1 1 280px}
 </style>
 </head>
 <body>
@@ -235,7 +274,22 @@ a.cell:focus-visible{outline:3px solid #2F7FD8;outline-offset:1px}
 </div>
 
 <div class="wrap" id="yWrap"><main>
+<section class="pushbox" id="pushBox" aria-labelledby="pbh">
+  <div class="pbhead"><div><h2 id="pbh"><svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15zM10 20a2 2 0 0 0 4 0" fill="none" stroke="#17533D" stroke-width="1.8" stroke-linejoin="round"/></svg>빈자리 알림</h2><p class="note" id="pbSum">고른 날짜에 아르피아 빈자리가 새로 나면 이 기기로 알려 드려요.</p></div>
+  <button type="button" class="pbtn" id="pbOpen" aria-expanded="false" aria-controls="pbBody">알림 받기</button></div>
+  <div id="pbBody" hidden>
+    <div class="pbenv" id="pbEnv"></div>
+    <div class="grow"><div class="flabel">날짜<small>여러 개 고를 수 있어요(평일 포함, 최대 20일)</small></div><div class="cal" id="pbCal"></div></div>
+    <div class="grow"><div class="flabel">시간대<small>안 고르면 전부</small></div><div class="chips" id="pbTimes"></div></div>
+    <div class="grow"><div class="flabel">코트<small>안 고르면 전부</small></div><div class="chips" id="pbCourts"></div></div>
+    <label class="chk" id="pbSeoulL"><input type="checkbox" id="pbSeoul"><span id="pbSeoulT">서울 즐겨찾기 코트 접수 시작도 알리기</span></label>
+    <div class="pbact"><button type="button" class="pbsub" id="pbSave">알림 신청</button><button type="button" class="live" id="pbTest" hidden>테스트 알림 보내기</button><button type="button" class="live" id="pbOff" hidden>알림 해지</button></div>
+    <p class="pbmsg" id="pbMsg" role="status" aria-live="polite"></p>
+    <p class="note"><span class="u">15분마다(밤 11시~아침 7시는 쉼) 신청된 날짜만 공식 사이트에서 확인해,</span> <span class="u">새로 빈 자리만 한 번씩 알려 드려요.</span> <span class="u">알림을 누르면 이 화면의 그 날짜로 옵니다.</span> <span class="u">이름·전화번호는 받지 않고, 이 기기에만 연결됩니다.</span></p>
+  </div>
+</section>
   <section aria-labelledby="yh"><h2 id="yh">다음 빈자리 · 아르피아 테니스장</h2><div class="chips" id="yChips" role="group" aria-label="요일 필터"></div><div id="yErr"></div><div id="yNext"></div></section>
+  <section aria-labelledby="yhp"><h2 id="yhp">날짜로 찾기</h2><p class="note"><span class="u">날짜를 누르면 평일이라도 그 자리에서 공식 사이트를 조회합니다.</span> <span class="u">점이 있는 날은 빈자리가 확인된 날이에요.</span></p><div class="cal" id="yPick"></div></section>
   <section aria-labelledby="yh2"><h2 id="yh2">날짜별 시간표</h2><div id="yLive" class="lmsg" role="status" aria-live="polite"></div><div id="yDays" style="display:flex;flex-direction:column;gap:10px"></div></section>
   <div class="ycard"><p class="note"><span class="u">평일은 오늘부터 2주, 주말·공휴일은 다음 달 말일까지 보여 줍니다.</span> <span class="u">이 페이지를 열면 공식 사이트에서 가까운 4날짜를 먼저, 이어서 주말·공휴일을 30초에 한 날짜씩 가져옵니다(같은 날짜는 10분 안에는 다시 조회하지 않음).</span> <span class="u">평일은 ‘지금 확인’ 버튼을 눌렀을 때만 가져옵니다.</span> <span class="u">아직 못 받은 날짜는 흐리게 마지막 저장본으로 보여 주고, 날짜 옆에 확인 시각을 적습니다.</span> <span class="u">그사이 예약될 수 있으니 예약 전에 공식 사이트에서 확인하세요(시간표 칸과 빈자리 항목을 누르면 해당 코트 예약 페이지가 열립니다).</span> <span class="u">‘새로 고침’은 이 페이지의 데이터만 다시 읽으며, 5분마다 자동으로도 읽습니다.</span></p>
   <a class="go" id="yGo" href="https://publicsports.yongin.go.kr/publicsports/sports/selectFcltyRceptResveListU.do" target="_blank" rel="noopener">공식 예약 사이트에서 예약하기 <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M5 3l5 5-5 5" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
@@ -424,7 +478,7 @@ a.cell:focus-visible{outline:3px solid #2F7FD8;outline-offset:1px}
     if(live[day])return'<i class="lv">방금 공식 조회 '+live[day].at.slice(0,5)+'</i>';
     if(liveBusy[day])return'<i class="ld"><b></b>받는 중…</i>';
     var d=parse(isoStr);if(!d)return'<i class="st">저장본</i>';
-    var h=Math.floor((Date.now()-d)/36e5);return'<i class="st">'+(h<1?'1시간 안 저장본':h<48?h+'시간 전 저장본':Math.floor(h/24)+'일 전 저장본')+'</i>'}
+    var h=Math.floor((Date.now()-d)/36e5);return'<i class="st">'+(h<1?Math.max(1,Math.floor((Date.now()-d)/6e4))+'분 전 확인':h<48?h+'시간 전 저장본':Math.floor(h/24)+'일 전 저장본')+'</i>'}
   function liveStatus(){var el=$('yLive'),n=LV.queue.length,m='';
     var wk=LV.queue.filter(isWE),wkDone=wk.filter(function(d){return live[d]}).length;
     if(LV.state==='running')m=(LV.i<LV.nfirst?'가까운 날짜 '+Math.min(LV.i+1,LV.nfirst)+'/'+LV.nfirst+' 받는 중':'주말·공휴일 '+wkDone+'/'+wk.length+' 받는 중(30초에 한 날짜)')+' — 아직 못 받은 날짜는 흐리게 마지막 저장본으로 보여 줍니다. 평일은 ‘지금 확인’으로 받습니다.';
@@ -504,6 +558,7 @@ a.cell:focus-visible{outline:3px solid #2F7FD8;outline-offset:1px}
     nxt.sort(function(a,b){return a.day<b.day?-1:a.day>b.day?1:a.s<b.s?-1:1});
     $('yNext').innerHTML=nxt.length?nxHtml(nxt)
       :'<div class="dash">지금 확인된 '+(yKind==='wd'?'평일':yKind==='we'?'주말·공휴일':'')+' 빈자리가 없습니다. 취소분이 나오면 다음에 열 때(또는 ‘새로 고침’) 여기 맨 위에 뜹니다.</div>';
+    if(typeof YP!=='undefined'&&YP&&$('yPick'))ypRender();
     if(tab==='yongin'){$('nOpen').textContent=nOpen;$('nSoon').textContent=days.length;$('nClosed').textContent=courts.length;$('updated').textContent=yongUpd}
   }
   function setTab(t){
@@ -513,10 +568,11 @@ a.cell:focus-visible{outline:3px solid #2F7FD8;outline-offset:1px}
     $('h1').innerHTML=y?'용인 아르피아 테니스장<br> 빈자리 현황':'서울 공공 테니스장<br> 지금 접수되는 곳';
     $('lOpen').textContent=y?'빈 시간대':'접수중';$('lSoon').textContent=y?'확인한 날':'오픈 예정';$('lClosed').textContent=y?'코트':'마감';
     if(y){yrender();if(!yd)$('updated').textContent=''}else{$('updated').textContent=seoulUpd;if(courts.length)render()}
-    try{history.replaceState(null,'',y?'#yongin':location.pathname+location.search)}catch(e){}
+    var pm=(y?$('yWrap'):$('sWrap')).querySelector('main');if(pm.firstElementChild!==$('pushBox'))pm.insertBefore($('pushBox'),pm.firstElementChild);
+    try{history.replaceState(null,'',y?location.pathname+location.search+'#yongin':location.pathname+location.search)}catch(e){}
   }
   $('tabSeoul').onclick=function(){setTab('seoul')};$('tabYongin').onclick=function(){setTab('yongin')};
-  function loadYongin(){return fetch(nocache(YDATA),{cache:'no-store'}).then(function(r){if(!r.ok)throw new Error(r.status);return r.json()}).then(function(d){yd=d;yrender()})
+  function loadYongin(){return fetch(nocache(YDATA),{cache:'no-store'}).then(function(r){if(!r.ok)throw new Error(r.status);return r.json()}).then(function(d){yd=d;yrender();return pushState()})
     .catch(function(e){if(!yd)$('yErr').innerHTML='<div class="err">용인 데이터를 불러오지 못했습니다.</div>';throw e})}
   /* 새로 고침: 우리 사이트의 json 두 개만 다시 읽는다(공식 사이트 조회·워크플로 실행 없음) */
   var busy=false,lastClick=0;
@@ -528,11 +584,137 @@ a.cell:focus-visible{outline:3px solid #2F7FD8;outline-offset:1px}
       var d=new Date();$('rfNote').textContent=(r[0]&&r[1]?'방금 확인: ':'일부만 읽음: ')+p2(d.getHours())+':'+p2(d.getMinutes())+' 데이터';
       busy=false;b.disabled=false;b.classList.remove('spin')});
   }
+  var DEEP=(new URLSearchParams(location.search).get('d')||'');if(!/^\d{4}-\d{2}-\d{2}$/.test(DEEP))DEEP='';
+  /* ---------- 달력(날짜 고르기·알림 날짜 공용): 오늘 ~ 다음 달 말일 ---------- */
+  function pbRange(){var n=new Date(),a=new Date(n.getFullYear(),n.getMonth(),n.getDate()),b=new Date(n.getFullYear(),n.getMonth()+2,0);return[a,b]}
+  function calHtml(sel,mark){var r=pbRange(),h='',d=new Date(r[0].getFullYear(),r[0].getMonth(),1);
+    while(d<=r[1]){var y=d.getFullYear(),m=d.getMonth(),first=new Date(y,m,1).getDay(),last=new Date(y,m+1,0).getDate();
+      h+='<div class="calm"><b>'+y+'년 '+(m+1)+'월</b><div class="calg" role="group" aria-label="'+(m+1)+'월 날짜">'+DOW.map(function(w){return'<span aria-hidden="true">'+w+'</span>'}).join('');
+      var k0=1;if(y===r[0].getFullYear()&&m===r[0].getMonth()){k0=r[0].getDate()-r[0].getDay();if(k0<1)k0=1;else first=0}   // 이번 달은 이번 주부터(지난 주 줄은 뺌)
+      for(var i=0;i<first;i++)h+='<button type="button" disabled tabindex="-1" aria-hidden="true"></button>';
+      for(var k=k0;k<=last;k++){var dd=new Date(y,m,k),key=iso(dd),off=dd<r[0]||dd>r[1],mk=mark?mark(key):'';
+        h+='<button type="button" data-d="'+key+'"'+(off?' disabled':'')+' class="'+(isWE(key)?'we':'')+(mk?' '+mk:'')+'" aria-pressed="'+!!sel[key]+'" aria-label="'+dlabel(key)+(isWE(key)?' 주말·공휴일':'')+(mk==='has'?' 빈자리 있음':'')+'">'+k+'</button>'}
+      h+='</div></div>';d=new Date(y,m+1,1)}
+    return h}
+
+  /* ---------- 날짜로 찾기: 고른 날짜를 그 자리에서 공식 조회(평일 포함, '지금 확인'과 같은 요청·같은 서버 상한) ---------- */
+  var YP={sel:{}};
+  function ypMark(day){var cs=dayData(day),n=0;Object.keys(cs||{}).forEach(function(k){(cs[k]||[]).forEach(function(s){if(s.open)n++})});return n?'has':''}
+  function ypRender(){$('yPick').innerHTML=calHtml(YP.sel,ypMark)}
+  $('yPick').onclick=function(e){var b=e.target.closest('button[data-d]');if(!b)return;var k=b.getAttribute('data-d');
+    YP.sel={};YP.sel[k]=1;ypRender();
+    liveLast=0;liveCheck(k);                         // 같은 날짜는 서버가 10분 캐시
+    setTimeout(function(){var el=document.querySelector('#yDays details.dday[data-day="'+k+'"]');if(el){el.open=true;el.scrollIntoView({behavior:'smooth',block:'start'})}},120)};
+
+  /* ---------- 빈자리 알림(웹 푸시) ----------
+     구독 = 이 기기의 Web Push 구독 + 고른 조건(날짜·시간대·코트·서울 즐겨찾기). 서버(/api/push)에 저장, 확인은 GitHub Actions 가 15분마다.
+     이 기기의 조건 사본은 localStorage 'push1'(화면 복원용). 이름·전화 등 개인정보는 받지 않는다. */
+  var PUSH=new URLSearchParams(location.search).get('push')||'api/push';
+  var PB={open:false,dates:{},times:{},courts:{},seoul:false,subd:false,key:'',busy:false};
+  try{var ps=JSON.parse(localStorage.getItem('push1')||'null');if(ps){PB.dates=ps.dates||{};PB.times=ps.times||{};PB.courts=ps.courts||{};PB.seoul=!!ps.seoul;PB.subd=!!ps.subd}}catch(e){}
+  function pbSave(){try{localStorage.setItem('push1',JSON.stringify({dates:PB.dates,times:PB.times,courts:PB.courts,seoul:PB.seoul,subd:PB.subd}))}catch(e){}}
+  var UA=navigator.userAgent||'',IOS=/iPhone|iPad|iPod/.test(UA)||(/Macintosh/.test(UA)&&navigator.maxTouchPoints>1);
+  var STANDALONE=(window.matchMedia&&matchMedia('(display-mode: standalone)').matches)||navigator.standalone===true;
+  var CANPUSH='serviceWorker' in navigator&&'PushManager' in window&&'Notification' in window;
+  var INAPP=/KAKAOTALK|NAVER|Instagram|FBAN|FBAV|Line\//i.test(UA);
+  var swReg=null;
+  function pbPost(o){return fetch(PUSH,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(o)}).then(function(r){return r.json().then(function(j){return{ok:r.ok,st:r.status,j:j}},function(){return{ok:r.ok,st:r.status,j:{}}})},function(){return{ok:false,st:0,j:{error:'연결 실패'}}})}
+  if(CANPUSH)navigator.serviceWorker.register('/sw.js').then(function(r){swReg=r;return r.pushManager.getSubscription()}).then(function(s){
+    if(!s){if(PB.subd){PB.subd=false;pbSave();pbRender()}return}     // 브라우저에서 구독이 사라졌으면 화면도 해지 상태로
+    PB.subd=true;pbPost({op:'get',endpoint:s.endpoint}).then(function(x){
+      if(x.ok&&x.j.yongin){PB.dates={};(x.j.yongin.dates||[]).forEach(function(d){PB.dates[d]=1});PB.times={};(x.j.yongin.times||[]).forEach(function(t){PB.times[t]=1});
+        PB.courts={};(x.j.yongin.courts||[]).forEach(function(c){PB.courts[c]=1});PB.seoul=!!(x.j.seoul&&x.j.seoul.on);pbSave()}
+      else if(x.st===404){PB.subd=false;pbSave()}
+      pbRender()})
+  }).catch(function(){});
+  function pbKey(){return PB.key?Promise.resolve(PB.key):fetch(PUSH+'?op=key').then(function(r){return r.json()}).then(function(j){PB.key=j.publicKey||'';return PB.key})}
+  function b64u(s){var p='='.repeat((4-s.length%4)%4),b=atob((s+p).replace(/-/g,'+').replace(/_/g,'/')),a=new Uint8Array(b.length);for(var i=0;i<b.length;i++)a[i]=b.charCodeAt(i);return a}
+  function pbMsg(t,bad){var el=$('pbMsg');el.textContent=t||'';el.className='pbmsg'+(bad?' bad':'')}
+  function pbPrune(){var r=pbRange(),t0=iso(r[0]),t1=iso(r[1]);Object.keys(PB.dates).forEach(function(d){if(d<t0||d>t1)delete PB.dates[d]})}
+  function pbTimesList(){var m={};
+    function eat(cs){Object.keys(cs||{}).forEach(function(k){(cs[k]||[]).forEach(function(s){m[s.s]=s.e})})}
+    if(yd&&yd.days)Object.keys(yd.days).forEach(function(d){eat(yd.days[d])});
+    Object.keys(live).forEach(function(d){eat(live[d].cs)});
+    if(Object.keys(m).length<3)['07:00','09:00','11:00','13:00','15:00','17:00','19:00'].forEach(function(t){m[t]=m[t]||(p2(+t.slice(0,2)+2)+':00')});
+    return Object.keys(m).sort().map(function(t){return{s:t,e:m[t]}})}
+  var CN={c1:'1코트',c2:'2코트',c3:'3코트',cd:'장애인 코트'};
+  function pbSummary(){var ds=Object.keys(PB.dates).sort(),ts=Object.keys(PB.times).sort(),cs=Object.keys(PB.courts);
+    if(!ds.length&&!PB.seoul)return'';
+    return [ds.length?(dlabel(ds[0])+(ds.length>1?' 외 '+(ds.length-1)+'일':'')):'',
+      ds.length?(ts.length?ts.map(function(t){return +t.slice(0,2)+'시'}).join('·'):'모든 시간'):'',
+      ds.length?(cs.length&&cs.length<4?cs.map(function(c){return CN[c]||c}).join('·'):'모든 코트'):'',
+      PB.seoul?'서울 즐겨찾기 접수 시작':''].filter(Boolean).join(' · ')}
+  function pbRender(){
+    pbPrune();
+    var sum=pbSummary();
+    $('pbSum').textContent=PB.subd&&sum?'알림 받는 중: '+sum:'고른 날짜에 아르피아 빈자리가 새로 나면 이 기기로 알려 드려요.';
+    $('pbOpen').textContent=PB.open?'닫기':(PB.subd?'알림 설정':'알림 받기');$('pbOpen').setAttribute('aria-expanded',PB.open);
+    $('pbBody').hidden=!PB.open;if(!PB.open)return;
+    var env=[],ok=CANPUSH;
+    if(IOS&&!STANDALONE){ok=false;env.push('<div class="notice"><b>아이폰·아이패드</b>: 사파리 아래 공유 버튼 → ‘홈 화면에 추가’ → 홈 화면의 <b>코트판</b> 아이콘으로 열어 여기서 신청하세요. (iOS 16.4 이상)</div>')}
+    else if(!CANPUSH)env.push('<div class="notice">이 브라우저는 알림을 지원하지 않아요.'+(INAPP?' 카카오톡·네이버 앱 안이라면 ‘다른 브라우저로 열기’로 크롬·사파리에서 열어 주세요.':' 크롬·엣지·사파리 최신 버전에서 열어 주세요.')+'</div>');
+    else if(Notification.permission==='denied')env.push('<div class="notice">이 사이트 알림이 차단돼 있어요. 주소창 왼쪽 자물쇠(사이트 설정) → 알림 → 허용으로 바꾼 뒤 다시 눌러 주세요.</div>');
+    if(!IOS)env.push('<p class="note">PC는 크롬·엣지·사파리에서 바로 됩니다. 브라우저가 묻는 ‘알림 허용’을 눌러 주세요.</p>');
+    $('pbEnv').innerHTML=env.join('');
+    $('pbCal').innerHTML=calHtml(PB.dates);
+    $('pbTimes').innerHTML=pbTimesList().map(function(t){return'<button type="button" class="chip" data-t="'+t.s+'" aria-pressed="'+!!PB.times[t.s]+'">'+t.s+'~'+t.e+'</button>'}).join('');
+    var cl=(yd&&yd.courts&&yd.courts.length?yd.courts:[{key:'c1',name:'1코트'},{key:'c2',name:'2코트'},{key:'c3',name:'3코트'},{key:'cd',name:'장애인 코트'}]);
+    $('pbCourts').innerHTML=cl.map(function(c){return'<button type="button" class="chip" data-c="'+esc(c.key)+'" aria-pressed="'+!!PB.courts[c.key]+'">'+esc(c.name)+'</button>'}).join('');
+    var nf=favN();$('pbSeoul').checked=PB.seoul&&nf>0;$('pbSeoul').disabled=!nf;
+    $('pbSeoulT').textContent=nf?'서울 즐겨찾기 코트('+nf+'곳) 접수 시작도 알리기':'서울 즐겨찾기 코트 접수 시작 알림(서울 탭에서 별을 먼저 눌러 주세요)';
+    $('pbSave').disabled=!ok||PB.busy;$('pbSave').textContent=PB.subd?'변경 저장':'알림 신청';
+    $('pbTest').hidden=!PB.subd;$('pbOff').hidden=!PB.subd}
+  $('pbOpen').onclick=function(){PB.open=!PB.open;if(PB.open&&CANPUSH)pbKey().catch(function(){});pbRender()};
+  $('pbCal').onclick=function(e){var b=e.target.closest('button[data-d]');if(!b)return;var k=b.getAttribute('data-d');
+    if(PB.dates[k])delete PB.dates[k];else{if(Object.keys(PB.dates).length>=20){pbMsg('날짜는 최대 20일까지 고를 수 있어요.',1);return}PB.dates[k]=1}
+    b.setAttribute('aria-pressed',!!PB.dates[k]);pbMsg('')};
+  $('pbTimes').onclick=function(e){var b=e.target.closest('[data-t]');if(!b)return;var k=b.getAttribute('data-t');if(PB.times[k])delete PB.times[k];else PB.times[k]=1;b.setAttribute('aria-pressed',!!PB.times[k])};
+  $('pbCourts').onclick=function(e){var b=e.target.closest('[data-c]');if(!b)return;var k=b.getAttribute('data-c');if(PB.courts[k])delete PB.courts[k];else PB.courts[k]=1;b.setAttribute('aria-pressed',!!PB.courts[k])};
+  $('pbSeoul').onchange=function(){PB.seoul=this.checked};
+  function pbBusy(on){PB.busy=on;$('pbSave').disabled=on;$('pbTest').disabled=on;$('pbOff').disabled=on}
+  $('pbSave').onclick=function(){
+    if(PB.busy)return;pbPrune();
+    var ds=Object.keys(PB.dates).sort();
+    if(!ds.length&&!PB.seoul){pbMsg('알림 받을 날짜를 하나 이상 골라 주세요.',1);return}
+    pbBusy(true);pbMsg('알림 허용을 확인하는 중…');
+    var perm=Notification.requestPermission();   // 사용자 누름 안에서 바로 호출(아이폰 조건)
+    Promise.resolve(perm).then(function(p){if(p!=='granted')throw{msg:'알림이 허용되지 않았어요. 브라우저가 묻는 창에서 ‘허용’을 눌러 주세요.'};
+      return Promise.all([swReg||navigator.serviceWorker.register('/sw.js'),pbKey()])})
+    .then(function(a){swReg=a[0];var key=a[1];if(!key)throw{msg:'알림 서버가 준비되지 않았어요.'};
+      return navigator.serviceWorker.ready.then(function(reg){return reg.pushManager.getSubscription().then(function(s){return s||reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:b64u(key)})})})})
+    .then(function(sub){var favs=PB.seoul?Object.keys(FAVS):[];
+      return pbPost({op:'sub',sub:sub.toJSON(),yongin:{dates:ds,times:Object.keys(PB.times).sort(),courts:Object.keys(PB.courts)},seoul:{on:PB.seoul&&favs.length>0,favs:favs}})})
+    .then(function(x){if(!x.ok)throw{msg:(x.j&&x.j.error)||'신청하지 못했어요. 잠시 후 다시 눌러 주세요.'};
+      PB.subd=true;pbSave();pbRender();pbMsg('신청 완료: '+pbSummary()+'. ‘테스트 알림 보내기’로 이 기기에 오는지 확인해 보세요.')})
+    .catch(function(e){pbMsg((e&&e.msg)||'신청하지 못했어요. ('+((e&&e.message)||'알 수 없는 오류')+')',1)})
+    .then(function(){pbBusy(false);pbRender()})};
+  function pbWithSub(fn){if(!swReg)return Promise.reject({msg:'알림 기능을 아직 준비 중이에요. 잠시 후 다시 눌러 주세요.'});
+    return swReg.pushManager.getSubscription().then(function(s){if(!s)throw{msg:'이 기기의 구독이 없어요. 다시 신청해 주세요.',gone:1};return fn(s)})}
+  $('pbTest').onclick=function(){if(PB.busy)return;pbBusy(true);pbMsg('테스트 알림을 보내는 중…');
+    pbWithSub(function(s){return pbPost({op:'test',endpoint:s.endpoint})}).then(function(x){
+      if(x.ok)pbMsg('보냈어요. 몇 초 안에 이 기기에 알림이 떠야 합니다(안 뜨면 기기·브라우저 알림 설정을 확인).');
+      else{if(x.st===404||x.st===410){PB.subd=false;pbSave()}pbMsg((x.j&&x.j.error)||'보내지 못했어요.',1)}})
+    .catch(function(e){if(e&&e.gone){PB.subd=false;pbSave()}pbMsg((e&&e.msg)||'보내지 못했어요.',1)}).then(function(){pbBusy(false);pbRender()})};
+  $('pbOff').onclick=function(){if(PB.busy)return;pbBusy(true);pbMsg('해지하는 중…');
+    pbWithSub(function(s){return pbPost({op:'unsub',endpoint:s.endpoint}).then(function(x){if(!x.ok)throw{msg:'해지하지 못했어요. 잠시 후 다시 눌러 주세요.'};return s.unsubscribe()})})
+    .then(function(){PB.subd=false;pbSave();pbMsg('알림을 해지했어요. 이 기기로는 더 이상 오지 않습니다.')})
+    .catch(function(e){if(e&&e.gone){PB.subd=false;pbSave();pbMsg('이미 해지된 상태예요.');return}pbMsg((e&&e.msg)||'해지하지 못했어요.',1)})
+    .then(function(){pbBusy(false);pbRender()})};
+  /* 알림 확인 작업(15분)이 받은 최신 결과를 저장본 위에 덮어 보여 준다(평일 구독 날짜도 '지금 확인' 없이 보임) */
+  function pushState(){return fetch(PUSH+'?op=state').then(function(r){if(!r.ok)throw 0;return r.json()}).then(function(j){
+    if(!yd)return;yd.days=yd.days||{};yd.checked=yd.checked||{};
+    Object.keys(j.days||{}).forEach(function(d){var c=(j.checked||{})[d]||'';if(!yd.checked[d]||c>yd.checked[d]){yd.days[d]=j.days[d];yd.checked[d]=c}});
+    yrender();pbDeep()}).catch(function(){pbDeep()})}
+  /* 알림을 눌러 들어온 경우(?d=YYYY-MM-DD#yongin): 그 날짜를 펼쳐 보여 준다 */
+  function pbDeep(){if(!DEEP)return;var el=document.querySelector('#yDays details.dday[data-day="'+DEEP+'"]');
+    if(!el){$('yLive').textContent=dlabel(DEEP)+' — 아직 받은 결과가 없어요. 위 달력에서 그 날짜를 누르면 지금 조회합니다.';DEEP='';return}
+    el.open=true;el.classList.add('flash');setTimeout(function(){el.classList.remove('flash')},2500);el.scrollIntoView({behavior:'smooth',block:'start'});DEEP=''}
+  pbRender();ypRender();
   $('refresh').onclick=function(){liveRun();refreshAll(true)};
   setInterval(function(){if(!document.hidden)refreshAll(false)},300000);
   refreshAll(false);
   liveRun();
-  if(location.hash==='#yongin')setTab('yongin');
+  if(location.hash==='#yongin'||DEEP)setTab('yongin');else setTab('seoul');
 })();
 </script>
 </body>

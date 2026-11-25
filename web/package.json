@@ -1,1 +1,1 @@
-{ "name": "club-court-live", "private": true, "version": "1.0.0", "engines": { "node": "24.x" } }
+{ "name": "club-court-live", "private": true, "version": "1.0.0", "engines": { "node": "24.x" }, "dependencies": { "web-push": "3.6.7" } }

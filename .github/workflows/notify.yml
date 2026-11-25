@@ -1,0 +1,27 @@
+name: notify
+# 빈자리 알림 확인: 15분마다(KST 07:00~22:59 = UTC 22~23시, 0~13시). 구독된 날짜만 용인 공식 사이트에서 확인하고,
+# 결과를 Vercel /api/push 로 넘겨 '새로 빈 자리'만 구독 기기로 푸시한다. 규칙은 fetch_yongin.py 머리말·notify_main 참고.
+on:
+  schedule:
+    - cron: '*/15 22,23,0-13 * * *'
+  workflow_dispatch:
+    inputs:
+      force:
+        description: '쉬는 시간·최소 간격 무시(--force)'
+        type: boolean
+        default: false
+permissions:
+  contents: read
+concurrency:
+  group: notify
+  cancel-in-progress: false
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - name: 구독 날짜 확인 + 푸시
+        env:
+          PUSH_ADMIN_SECRET: ${{ secrets.PUSH_ADMIN_SECRET }}
+        run: python3 fetch_yongin.py --notify ${{ inputs.force && '--force' || '' }}

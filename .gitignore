@@ -2,3 +2,4 @@ design/
 data/yongin.json
 web/.vercel
 __pycache__/
+web/node_modules/

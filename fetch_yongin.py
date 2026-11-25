@@ -292,9 +292,110 @@ def main():
     return 0
 
 
+# ---------------------------------------------------------------------------
+# --notify: 빈자리 알림용 확인(GitHub Actions 15분 주기, 밤 23~7시 쉼).
+#   구독된 날짜(평일 포함)만 확인한다. 날짜 목록·확인 시각·백오프 상태는 Vercel /api/push(op=plan)에서 받고,
+#   결과는 op=report 로 넘겨 거기서 '새로 빈 자리'만 구독 기기로 푸시한다. 공식 사이트 호출 규칙은 위와 같다:
+#   같은 AJAX 1종, 실행당 MAX_REQ(16)건, 건 사이 GAP(5)초, 차단 징후 즉시 중단 → 백오프 30분, 재시도·우회 없음.
+#   구독 날짜가 많으면 가장 오래 확인 안 한 날짜부터 실행당 4일씩 돌아가며 확인한다.
+# ---------------------------------------------------------------------------
+import os
+PUSH_BASE = os.environ.get("PUSH_BASE", "https://club-court-board.vercel.app")
+QUIET = (23, 7)    # 밤 23시 ~ 아침 7시(KST)는 쉬기
+
+
+def push_api(method, params="", body=None):
+    secret = os.environ.get("PUSH_ADMIN_SECRET", "")
+    if not secret:
+        raise SystemExit("PUSH_ADMIN_SECRET 없음")
+    data = json.dumps(body, ensure_ascii=False).encode() if body is not None else None
+    req = urllib.request.Request(f"{PUSH_BASE}/api/push{params}", data=data, method=method, headers={
+        "Authorization": "Bearer " + secret, "Content-Type": "application/json", "User-Agent": "club-court-board/1.0"})
+    with urllib.request.urlopen(req, timeout=60) as r:
+        return json.loads(r.read().decode("utf-8"))
+
+
+def pick_notify(dates, checked, now, ids, max_req):
+    """구독 날짜 중 ID 가 있는 달만, 가장 오래 확인 안 한 날부터 max_req//4 일."""
+    usable, missing = [], set()
+    for d in dates:
+        if len(ids.get(d.strftime("%Y-%m"), {})) == 0:
+            missing.add(d.strftime("%Y-%m")); continue
+        usable.append(d)
+    def age(d):
+        c = checked.get(d.isoformat())
+        return (float("inf") if not c else (now - datetime.fromisoformat(c)).total_seconds(), -d.toordinal())
+    n_days = max(0, min(DAYS_PER_RUN, max_req // len(COURTS)))
+    picked = sorted(sorted(usable, key=age, reverse=True)[:n_days])
+    reqs = [(d, c, ids[d.strftime("%Y-%m")][c["key"]]) for d in picked for c in COURTS if ids[d.strftime("%Y-%m")].get(c["key"])]
+    return picked, reqs[:max_req], sorted(missing)
+
+
+def notify_main(force):
+    t = now_kst()
+    if not force and (t.hour >= QUIET[0] or t.hour < QUIET[1]):
+        print(f"쉬는 시간({t:%H:%M}). 요청 0건"); return 0
+    plan = push_api("GET", "?op=plan")
+    meta = dict(plan.get("meta") or {})
+    bo = dict(meta.get("backoff") or {})
+    today, end = t.date(), month_end_next(t.date())
+    dates = sorted({date.fromisoformat(d) for d in plan.get("dates") or [] if today.isoformat() <= d <= end.isoformat()})
+    print(f"구독 {plan.get('subs')}기기(서울 {plan.get('seoul_subs')}), 구독 날짜 {[d.isoformat() for d in dates]}")
+    if not dates:
+        r = push_api("POST", "", {"op": "report", "results": {}, "meta": None})   # 서울 접수 시작 확인만(공식 용인 요청 0건)
+        print("용인 요청 0건(구독 날짜 없음).", r.get("log")); return 0
+    if meta.get("last_attempt_at") and not force:
+        age_min = (t - datetime.fromisoformat(meta["last_attempt_at"])).total_seconds() / 60
+        need = BACKOFF_MIN if bo.get("active") else MIN_MIN
+        if age_min < need:
+            print(f"건너뜀: 직전 시도 {age_min:.0f}분 전(<{need}분{', 백오프 중' if bo.get('active') else ''}). 요청 0건")
+            push_api("POST", "", {"op": "report", "results": {}, "meta": None}); return 0
+    ids = {}
+    for c in COURTS:
+        for mo, rid in c["ids"].items():
+            ids.setdefault(mo, {})[c["key"]] = rid
+    for mo, kv in (meta.get("ids") or {}).items():
+        ids.setdefault(mo, {}).update({k: int(v) for k, v in kv.items()})
+    need_months = sorted({d.strftime("%Y-%m") for d in dates})
+    incomplete = [mo for mo in need_months if len(ids.get(mo, {})) < len(COURTS)]
+    probe_at = meta.get("id_probe_at")
+    results, n, err = {}, 0, ""
+    try:
+        if incomplete and (force or not probe_at or (t - datetime.fromisoformat(probe_at)).total_seconds() >= PROBE_HOURS * 3600):
+            found, pn = discover_ids()
+            n += pn; probe_at = t.isoformat(timespec="seconds")
+            for mo, kv in found.items():
+                ids.setdefault(mo, {}).update(kv)
+            print(f"ID 탐색 {pn}건: {sorted(found)}")
+            time.sleep(GAP)
+        picked, reqs, missing = pick_notify(dates, plan.get("checked") or {}, t, ids, MAX_REQ - n)
+        print(f"이번 확인 {[d.isoformat() for d in picked]} → 요청 {len(reqs)}건(상한 {MAX_REQ}, 탐색 포함 {n}건), ID 없는 달 {missing}")
+        n0 = n
+        for d, c, rid in reqs:
+            if n:
+                time.sleep(GAP)
+            n += 1
+            results.setdefault(d.isoformat(), {})[c["key"]] = call(d, rid)
+        # 4면을 다 받은 날짜만 넘긴다(중간에 끊긴 날짜는 다음 실행에)
+    except Abort as e:
+        err = str(e)[:200]
+        print(f"중단({n}번째 요청): {err} → 백오프", file=sys.stderr)
+    full = {d: v for d, v in results.items() if len(v) == sum(1 for c in COURTS if ids.get(d[:7], {}).get(c["key"]))}
+    if err:
+        bo = {"active": True, "since": bo.get("since") or t.isoformat(timespec="seconds"), "ok_streak": 0}
+    elif bo.get("active"):
+        streak = int(bo.get("ok_streak", 0)) + 1
+        bo = {"active": False} if streak >= BACKOFF_CLEAR else {"active": True, "since": bo.get("since"), "ok_streak": streak}
+    meta.update({"backoff": bo, "last_attempt_at": t.isoformat(timespec="seconds"), "last_request_count": n,
+                 "fetch_ok": not err, "last_error": err, "ids": ids, "id_probe_at": probe_at})
+    r = push_api("POST", "", {"op": "report", "results": full, "meta": meta})
+    print(f"보고: 날짜 {sorted(full)} / 요청 {n}건 / 푸시 {r.get('pushed')}건 / {r.get('log')}")
+    return 0
+
+
 if __name__ == "__main__":
     try:
-        sys.exit(main())
+        sys.exit(notify_main("--force" in sys.argv) if "--notify" in sys.argv else main())
     except Exception as e:      # 예상 못 한 오류도 서울 배포를 막지 않는다
         print(f"예상 밖 오류: {type(e).__name__}: {e}", file=sys.stderr)
         sys.exit(0)

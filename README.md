@@ -126,3 +126,11 @@ python -m http.server 18911            # 후 http://127.0.0.1:18911/index.html (
 ## 서울 즐겨찾기 (2026-11-23)
 - 서울 카드·마감 표 행마다 별 버튼(44px, aria-label·aria-pressed). 저장은 브라우저 `localStorage`(`fav1`, 기기별, 실패해도 동작). 즐겨찾기 키 = `장소명|코트명`(괄호 안 평일/주말·연도 표기 제외 정규화) → 같은 코트의 평일·주말 서비스가 함께 즐겨찾기된다.
 - 맨 위 "보기" 칩 [전체|즐겨찾기(n)] — 즐겨찾기가 1개 이상이면 기본 선택. 즐겨찾기한 코트는 목록 맨 위 "즐겨찾기" 구역에 고정(전체 보기에서도). 첫 방문(0개)에는 "자주 가는 코트에 별을 눌러 두면 위에 모아 보여요" 한 줄. 용인 탭은 그대로.
+
+## 빈자리 알림(웹 푸시) + 날짜로 찾기 (2026-11-25)
+- **날짜로 찾기**(용인 탭): 오늘~다음 달 말일 달력. 누르면 평일이라도 그 자리에서 `/api/arpia`(기존 '지금 확인'과 같은 요청·서버 상한) 조회 후 그 날짜를 펼침. 빈자리 확인된 날은 점 표시.
+- **알림 받기**(탭 맨 위 상자): 날짜(최대 20일, 평일 포함)·시간대(선택)·코트(선택)·서울 즐겨찾기 접수 시작(선택)을 골라 신청. 기기별 Web Push 구독+조건만 저장(이름·전화 없음). 변경 저장·해지·테스트 알림(그 기기에만, 20초에 1번) 버튼. 아이폰은 홈 화면 추가 후(iOS 16.4+) 안내, PC 크롬·엣지·사파리 한 줄 안내. `web/sw.js`(푸시 표시·누르면 `/?d=날짜#yongin`, 버튼 '용인 예약 사이트'), `web/manifest.webmanifest`, 아이콘 png.
+- **서버** `web/api/push.js`: Upstash Redis(마켓플레이스 `uo2-pvp` 를 이 프로젝트에도 연결, 키 접두사 `ccb:`). 공개 op: key·state·sub·get·unsub·test. 관리 op(헤더 `Authorization: Bearer PUSH_ADMIN_SECRET`): plan(구독 날짜 합집합·확인 시각·meta), report(결과 저장 → 구독자별 '새로 빈 자리'만 푸시, 같은 자리는 마감됐다 다시 빌 때까지 반복 안 함, 신청 순간 이미 빈 것으로 알려진 칸은 알리지 않음, 만료 구독 자동 삭제). 서울: report 때 1시간에 1번 `/api/seoul` 을 읽어 직전보다 새로 '접수중'이 된 즐겨찾기 코트만 1회 알림(첫 확인은 기준만).
+- **확인 작업** `.github/workflows/notify.yml` → `python3 fetch_yongin.py --notify`: cron `*/15 22,23,0-13 * * *`(KST 07:00~22:59, 밤 23~7시 쉼). 구독 날짜만, 가장 오래 확인 안 한 날부터 실행당 4일×4면=16건 상한, 건 사이 5초, 차단 징후 즉시 중단→백오프 30분(연속 3회 성공 시 복귀), 직전 시도 12분 안이면 건너뜀, ID 없는 달은 3시간마다 목록 탐색. 구독 날짜가 없으면 용인 요청 0건. 결과는 코트판에도 반영(`op=state`, 'n분 전 확인').
+- 시크릿: Vercel env `VAPID_PUBLIC_KEY`·`VAPID_PRIVATE_KEY`·`PUSH_ADMIN_SECRET`·`KV_REST_API_*`(연결로 자동), GitHub secret `PUSH_ADMIN_SECRET`. 로컬 사본 `~/.secrets/club-court-push.env`. 코드·커밋에 없음.
+- 수동 실행: `gh workflow run notify.yml -R yschoi128/club-court-board -f force=true`

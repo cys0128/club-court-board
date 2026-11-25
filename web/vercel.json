@@ -1,4 +1,8 @@
 {
   "regions": ["hnd1"],
-  "functions": { "api/arpia.js": { "maxDuration": 20 } }
+  "functions": { "api/arpia.js": { "maxDuration": 20 }, "api/push.js": { "maxDuration": 30 } },
+  "headers": [
+    { "source": "/sw.js", "headers": [{ "key": "Cache-Control", "value": "no-cache" }] },
+    { "source": "/manifest.webmanifest", "headers": [{ "key": "Content-Type", "value": "application/manifest+json" }] }
+  ]
 }
