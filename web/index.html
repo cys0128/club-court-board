@@ -189,6 +189,8 @@ a.cell:focus-visible{outline:3px solid #2F7FD8;outline-offset:1px}
 .cell{display:flex;align-items:center;justify-content:center;min-height:44px;border-radius:8px;font-size:11px;font-weight:600;white-space:nowrap}
 .cell.o{background:#CFE8D9;color:var(--court-d)}
 .cell.c{background:var(--closedbg);color:var(--sub)}
+.cell.c,.cell.na{cursor:default;user-select:none;-webkit-tap-highlight-color:transparent}
+.cell.na{background:transparent;color:#9AA09B;font-weight:500;border:1px dashed #D5D1C6}
 .dh{font-size:14px;font-weight:700;color:var(--sub2)}
 .dday>summary{min-height:44px;display:flex;align-items:center;justify-content:space-between;gap:8px;cursor:pointer;list-style:none;flex-wrap:wrap}
 .dday>summary::-webkit-details-marker{display:none}
@@ -551,8 +553,10 @@ a.cell:focus-visible{outline:3px solid #2F7FD8;outline-offset:1px}
         +ts.map(function(k){return'<th scope="col">'+k+'</th>'}).join('')+'</tr></thead><tbody>'
         +courts.map(function(c){var m={};(cs[c.key]||[]).forEach(function(s){m[s.s]=s});
           return'<tr><th scope="row" style="font-weight:600;color:#3F4541;text-align:left">'+esc(c.name)+'</th>'+ts.map(function(k){var s=m[k];
-            return'<td>'+(s?'<a class="cell '+(s.open?'o':'c')+'" href="'+esc(curl(day,c.key))+'" target="_blank" rel="noopener" aria-label="'+esc(c.name+' '+k+' '+(s.open?'빈자리':'마감')+wxAria(day,s.s,s.e)+', 공식 사이트에서 지금 확인')+'" title="공식 사이트에서 지금 확인">'+(s.open?'빈자리':'마감')+wxMini(day,s.s,s.e)+'</a>':'<span class="cell" style="color:#9AA09B">–</span>')+'</td>'}).join('')+'</tr>'}).join('')
-        +'</tbody></table></div></details>'});
+            return'<td>'+(s&&s.open?'<a class="cell o" href="'+esc(curl(day,c.key))+'" target="_blank" rel="noopener" aria-label="'+esc(c.name+' '+k+' 빈자리'+wxAria(day,s.s,s.e)+', 공식 예약 페이지 열기')+'" title="공식 예약 페이지 열기">빈자리'+wxMini(day,s.s,s.e)+'</a>'
+              :s?'<span class="cell c">마감</span>'
+              :'<span class="cell na" title="공식 사이트가 이 코트의 이 시간대 예약을 열지 않음" aria-label="'+esc(c.name+' '+k+' 미제공: 공식 사이트가 이 시간대 예약을 열지 않음')+'">미제공</span>')+'</td>'}).join('')+'</tr>'}).join('')
+        +'</tbody></table></div>'+(courts.some(function(c){var m={};(cs[c.key]||[]).forEach(function(x){m[x.s]=1});return ts.some(function(k){return!m[k]})})?'<p class="note" style="margin-top:6px">미제공 = 공식 사이트가 그 코트의 그 시간대 예약을 열지 않은 칸</p>':'')+'</details>'});
     $('yDays').innerHTML=dh||'<div class="dash">위 달력에서 날짜를 누르면 그날 코트·시간대를 보여 드려요.</div>';
     nxt.sort(function(a,b){return a.day<b.day?-1:a.day>b.day?1:a.s<b.s?-1:1});
     $('yNext').innerHTML=nxt.length?nxHtml(nxt)
