@@ -134,3 +134,9 @@ python -m http.server 18911            # 후 http://127.0.0.1:18911/index.html (
 - **확인 작업** `.github/workflows/notify.yml` → `python3 fetch_yongin.py --notify`: cron `*/15 22,23,0-13 * * *`(KST 07:00~22:59, 밤 23~7시 쉼). 구독 날짜만, 가장 오래 확인 안 한 날부터 실행당 4일×4면=16건 상한, 건 사이 5초, 차단 징후 즉시 중단→백오프 30분(연속 3회 성공 시 복귀), 직전 시도 12분 안이면 건너뜀, ID 없는 달은 3시간마다 목록 탐색. 구독 날짜가 없으면 용인 요청 0건. 결과는 코트판에도 반영(`op=state`, 'n분 전 확인').
 - 시크릿: Vercel env `VAPID_PUBLIC_KEY`·`VAPID_PRIVATE_KEY`·`PUSH_ADMIN_SECRET`·`KV_REST_API_*`(연결로 자동), GitHub secret `PUSH_ADMIN_SECRET`. 로컬 사본 `~/.secrets/club-court-push.env`. 코드·커밋에 없음.
 - 수동 실행: `gh workflow run notify.yml -R yschoi128/club-court-board -f force=true`
+
+## 용인 탭 = 달력 먼저 (2026-11-25, 소유자 결정)
+- 첫 화면에서 빈자리 목록·날짜별 시간표를 늘어놓지 않는다. 알림 받기 상자 → **날짜 고르기 달력** → 고른 날짜 하나의 코트·시간대만.
+- **첫 로딩 공식 조회 0건**(①가까운 4날짜·②주말 자동 조회 중단, 주말도 같은 방식으로 통일). 날짜를 누를 때만 `/api/arpia` 1회(4면=4건), 같은 날짜 10분 캐시. '새로 고침'은 고른 날짜만 다시 조회.
+- 달력 점 = 저장본·알림 확인 결과(`op=state`)·이번에 조회한 결과에서 빈자리가 확인된 날(요청 없음). 알림을 누르고 들어오면(`?d=`) 그 날짜를 골라 조회.
+- 위 "접속할 때 가져오기"·"② 범위 조정" 절의 자동 조회는 더 이상 쓰지 않는다(코드 `liveRun` 은 남아 있으나 호출 안 함).

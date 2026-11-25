@@ -288,10 +288,10 @@ a.cell:focus-visible{outline:3px solid #2F7FD8;outline-offset:1px}
     <p class="note"><span class="u">15분마다(밤 11시~아침 7시는 쉼) 신청된 날짜만 공식 사이트에서 확인해,</span> <span class="u">새로 빈 자리만 한 번씩 알려 드려요.</span> <span class="u">알림을 누르면 이 화면의 그 날짜로 옵니다.</span> <span class="u">이름·전화번호는 받지 않고, 이 기기에만 연결됩니다.</span></p>
   </div>
 </section>
-  <section aria-labelledby="yh"><h2 id="yh">다음 빈자리 · 아르피아 테니스장</h2><div class="chips" id="yChips" role="group" aria-label="요일 필터"></div><div id="yErr"></div><div id="yNext"></div></section>
-  <section aria-labelledby="yhp"><h2 id="yhp">날짜로 찾기</h2><p class="note"><span class="u">날짜를 누르면 평일이라도 그 자리에서 공식 사이트를 조회합니다.</span> <span class="u">점이 있는 날은 빈자리가 확인된 날이에요.</span></p><div class="cal" id="yPick"></div></section>
-  <section aria-labelledby="yh2"><h2 id="yh2">날짜별 시간표</h2><div id="yLive" class="lmsg" role="status" aria-live="polite"></div><div id="yDays" style="display:flex;flex-direction:column;gap:10px"></div></section>
-  <div class="ycard"><p class="note"><span class="u">평일은 오늘부터 2주, 주말·공휴일은 다음 달 말일까지 보여 줍니다.</span> <span class="u">이 페이지를 열면 공식 사이트에서 가까운 4날짜를 먼저, 이어서 주말·공휴일을 30초에 한 날짜씩 가져옵니다(같은 날짜는 10분 안에는 다시 조회하지 않음).</span> <span class="u">평일은 ‘지금 확인’ 버튼을 눌렀을 때만 가져옵니다.</span> <span class="u">아직 못 받은 날짜는 흐리게 마지막 저장본으로 보여 주고, 날짜 옆에 확인 시각을 적습니다.</span> <span class="u">그사이 예약될 수 있으니 예약 전에 공식 사이트에서 확인하세요(시간표 칸과 빈자리 항목을 누르면 해당 코트 예약 페이지가 열립니다).</span> <span class="u">‘새로 고침’은 이 페이지의 데이터만 다시 읽으며, 5분마다 자동으로도 읽습니다.</span></p>
+  <div hidden><div id="yChips"></div><div id="yNext"></div></div>
+  <section aria-labelledby="yhp"><h2 id="yhp">날짜 고르기 · 아르피아 테니스장</h2><p class="note"><span class="u">날짜를 누르면 그날 코트·시간대를 공식 사이트에서 바로 조회해 보여 줍니다.</span> <span class="u">점이 있는 날은 최근에 빈자리가 확인된 날이에요.</span></p><div id="yErr"></div><div class="cal" id="yPick"></div></section>
+  <section aria-labelledby="yh2"><h2 id="yh2">그날 코트·시간대</h2><div id="yLive" class="lmsg" role="status" aria-live="polite"></div><div id="yDays" style="display:flex;flex-direction:column;gap:10px"></div></section>
+  <div class="ycard"><p class="note"><span class="u">처음 열 때는 공식 사이트를 조회하지 않습니다.</span> <span class="u">날짜를 누를 때만 그날 4면을 조회하고, 같은 날짜는 10분 안에는 다시 조회하지 않습니다.</span> <span class="u">그사이 예약될 수 있으니 예약 전에 공식 사이트에서 확인하세요(시간표 칸을 누르면 해당 코트 예약 페이지가 열립니다).</span> <span class="u">‘새로 고침’은 고른 날짜를 다시 조회합니다.</span></p>
   <a class="go" id="yGo" href="https://publicsports.yongin.go.kr/publicsports/sports/selectFcltyRceptResveListU.do" target="_blank" rel="noopener">공식 예약 사이트에서 예약하기 <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M5 3l5 5-5 5" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
   <p class="note"><span class="u">출처: 용인특례시 공공체육시설 통합예약(비로그인 공개 화면 기준).</span></p></div>
 </main></div>
@@ -531,7 +531,8 @@ a.cell:focus-visible{outline:3px solid #2F7FD8;outline-offset:1px}
     if(!yd){return}
     var now=new Date(),courts=yd.courts||[],chk=yd.checked||{},nOpen=0,nxt=[],todayS=iso(now),dset={};
     Object.keys(yd.days||{}).forEach(function(d){dset[d]=1});Object.keys(live).forEach(function(d){dset[d]=1});
-    var days=Object.keys(dset).sort().filter(function(day){return day>=todayS&&(!yKind||(yKind==='we')===isWE(day))});
+    var nKnown=Object.keys(dset).filter(function(d){return d>=todayS}).length;
+    var days=((typeof YP!=='undefined'&&YP)?Object.keys(YP.sel):[]).filter(function(day){return day>=todayS});   // 고른 날짜만 보여 준다
     var upd=parse(yd.updated_at),lat='';Object.keys(live).forEach(function(d){if(live[d].at>lat)lat=live[d].at});
     yongUpd=lat?'공식 조회 '+lat.slice(0,5):(upd?'저장본 '+mdt(upd):'');
     var mm=(yd.missing_months||[]).map(function(m){return '<div class="notice" style="margin-bottom:8px">'+(+m.slice(5))+'월 예약 아직 안 열림 — 열리면 자동으로 표시됩니다.</div>'}).join('');
@@ -547,19 +548,19 @@ a.cell:focus-visible{outline:3px solid #2F7FD8;outline-offset:1px}
         if(s.open&&!past){dOpen++;nOpen++;(byT[s.s]=byT[s.s]||{e:s.e,c:[],k:[]}).c.push(c.name),byT[s.s].k.push(c.key)}})});
       Object.keys(byT).sort().forEach(function(k){nxt.push({day:day,s:k,e:byT[k].e,c:byT[k].c,k:byT[k].k})});
       var ts=Object.keys(times).sort();
-      dh+='<details class="dday'+(live[day]?'':' stale')+'" data-day="'+day+'"'+((wasOpen[day]!==undefined?wasOpen[day]:dOpen)?' open':'')+'><summary><span class="dh">'+dlabel(day)+(isWE(day)?' <i class="wk">주말·공휴일</i>':'')+'</span> '+wxDayHtml('yongin',day)+'<span class="sm"><em class="ag">'+liveTag(day,chk[day])+'</em> '+(dOpen?'<b class="go-n">빈 시간대 '+dOpen+'</b>':'전부 마감')+'</span>'+liveBtn(day)+'</summary>'
-        +'<div class="tablebox" style="margin-top:8px"><table class="ytab"><thead><tr><th scope="col">코트</th>'
+      dh+='<details class="dday'+(live[day]||liveBusy[day]?'':' stale')+'" data-day="'+day+'" open><summary><span class="dh">'+dlabel(day)+(isWE(day)?' <i class="wk">주말·공휴일</i>':'')+'</span> '+wxDayHtml('yongin',day)+'<span class="sm"><em class="ag">'+liveTag(day,chk[day])+'</em> '+(dOpen?'<b class="go-n">빈 시간대 '+dOpen+'</b>':'전부 마감')+'</span>'+liveBtn(day)+'</summary>'
+        +(ts.length?'':'<p class="note" style="margin-top:8px">'+(liveBusy[day]?'공식 사이트에서 받는 중…':'아직 받은 결과가 없어요. ‘지금 확인’을 눌러 주세요.')+'</p>')+'<div class="tablebox" style="margin-top:8px"'+(ts.length?'':' hidden')+'><table class="ytab"><thead><tr><th scope="col">코트</th>'
         +ts.map(function(k){return'<th scope="col">'+k+'</th>'}).join('')+'</tr></thead><tbody>'
         +courts.map(function(c){var m={};(cs[c.key]||[]).forEach(function(s){m[s.s]=s});
           return'<tr><th scope="row" style="font-weight:600;color:#3F4541;text-align:left">'+esc(c.name)+'</th>'+ts.map(function(k){var s=m[k];
             return'<td>'+(s?'<a class="cell '+(s.open?'o':'c')+'" href="'+esc(curl(day,c.key))+'" target="_blank" rel="noopener" aria-label="'+esc(c.name+' '+k+' '+(s.open?'빈자리':'마감')+wxAria(day,s.s,s.e)+', 공식 사이트에서 지금 확인')+'" title="공식 사이트에서 지금 확인">'+(s.open?'빈자리':'마감')+wxMini(day,s.s,s.e)+'</a>':'<span class="cell" style="color:#9AA09B">–</span>')+'</td>'}).join('')+'</tr>'}).join('')
         +'</tbody></table></div></details>'});
-    $('yDays').innerHTML=dh||'<p class="empty">표시할 날짜가 없습니다.</p>';
+    $('yDays').innerHTML=dh||'<div class="dash">위 달력에서 날짜를 누르면 그날 코트·시간대를 보여 드려요.</div>';
     nxt.sort(function(a,b){return a.day<b.day?-1:a.day>b.day?1:a.s<b.s?-1:1});
     $('yNext').innerHTML=nxt.length?nxHtml(nxt)
       :'<div class="dash">지금 확인된 '+(yKind==='wd'?'평일':yKind==='we'?'주말·공휴일':'')+' 빈자리가 없습니다. 취소분이 나오면 다음에 열 때(또는 ‘새로 고침’) 여기 맨 위에 뜹니다.</div>';
     if(typeof YP!=='undefined'&&YP&&$('yPick'))ypRender();
-    if(tab==='yongin'){$('nOpen').textContent=nOpen;$('nSoon').textContent=days.length;$('nClosed').textContent=courts.length;$('updated').textContent=yongUpd}
+    if(tab==='yongin'){$('nOpen').textContent=nOpen;$('nSoon').textContent=nKnown;$('nClosed').textContent=courts.length;$('updated').textContent=yongUpd}
   }
   function setTab(t){
     tab=t;var y=t==='yongin';
@@ -706,14 +707,13 @@ a.cell:focus-visible{outline:3px solid #2F7FD8;outline-offset:1px}
     Object.keys(j.days||{}).forEach(function(d){var c=(j.checked||{})[d]||'';if(!yd.checked[d]||c>yd.checked[d]){yd.days[d]=j.days[d];yd.checked[d]=c}});
     yrender();pbDeep()}).catch(function(){pbDeep()})}
   /* 알림을 눌러 들어온 경우(?d=YYYY-MM-DD#yongin): 그 날짜를 펼쳐 보여 준다 */
-  function pbDeep(){if(!DEEP)return;var el=document.querySelector('#yDays details.dday[data-day="'+DEEP+'"]');
-    if(!el){$('yLive').textContent=dlabel(DEEP)+' — 아직 받은 결과가 없어요. 위 달력에서 그 날짜를 누르면 지금 조회합니다.';DEEP='';return}
+  function pbDeep(){if(!DEEP)return;YP.sel={};YP.sel[DEEP]=1;liveLast=0;liveCheck(DEEP);yrender();var el=document.querySelector('#yDays details.dday[data-day="'+DEEP+'"]');
+    if(!el){DEEP='';return}
     el.open=true;el.classList.add('flash');setTimeout(function(){el.classList.remove('flash')},2500);el.scrollIntoView({behavior:'smooth',block:'start'});DEEP=''}
   pbRender();ypRender();
-  $('refresh').onclick=function(){liveRun();refreshAll(true)};
+  $('refresh').onclick=function(){var d=Object.keys(YP.sel)[0];if(d&&tab==='yongin'){liveLast=0;liveCheck(d)}refreshAll(true)};
   setInterval(function(){if(!document.hidden)refreshAll(false)},300000);
   refreshAll(false);
-  liveRun();
   if(location.hash==='#yongin'||DEEP)setTab('yongin');else setTab('seoul');
 })();
 </script>
